@@ -1,45 +1,60 @@
 #include <msp430.h>
 #include "I2C.h"
 
-unsigned char RX_Data[6];
-unsigned char TX_Data[2];
-unsigned char RX_ByteCtr;
-unsigned char TX_ByteCtr;
-unsigned char slaveAddress;
-unsigned char repeatedStart;
+i2cTransaction_t* curTrans;
 
 void i2cInit(void)
 {
-	// set up I2C module
-	UCB1CTL1 = UCSWRST;								// Enable SW reset
-	UCB1CTL0 = UCMST + UCMODE_3 + UCSYNC;			// I2C Master, synchronous mode
-	UCB1CTL1 |= UCSSEL_2;							// Use SMCLK, keep SW reset
-	UCB1BR0 = 160;									// fSCL = SMCLK/(160 + 0*256) = 100kHz Assuming SMCLK = 16 MHz
+	// Enable SW reset
+	UCB1CTL1 = UCSWRST;
+	// I2C Master, synchronous mode
+	UCB1CTL0 = UCMST + UCMODE_3 + UCSYNC;
+	// Use SMCLK, keep SW reset
+	UCB1CTL1 |= UCSSEL__SMCLK;
+	// fSCL = SMCLK/(160 + 0*256) = 100kHz Assuming SMCLK = 16 MHz
+	UCB1BR0 = 160;
 	UCB1BR1 = 0;
-	//UCB1IE = UCNACKIE;
-	UCB1CTL1 &= ~UCSWRST;							// Clear SW reset, resume operation
+	// Clear SW reset, resume operation
+	UCB1CTL1 &= ~UCSWRST;
 }
 
-void i2cWrite(unsigned char address)
+void i2cWrite(i2cTransaction_t* trans)
 {
 	__disable_interrupt();
-	UCB1I2CSA = address;							// Load slave address
-	UCB1IE |= UCTXIE;								// Enable TX interrupt
-	while(UCB1CTL1 & UCTXSTP);						// Ensure stop condition sent
-	UCB1CTL1 |= UCTR + UCTXSTT;						// TX mode and START condition
-	__bis_SR_register(CPUOFF + GIE);				// sleep until UCB0TXIFG is set ...
+	// Set the current transaction
+	curTrans = trans;
+	// Store slave address
+	UCB1I2CSA = trans->slaveAddress;
+	// Enable TX interrupt
+	UCB1IE |= UCTXIE;
+	// Ensure stop condition sent
+	while(UCB1CTL1 & UCTXSTP);
+	// TX mode and START condition
+	UCB1CTL1 |= UCTR + UCTXSTT;
+	// sleep until UCB0TXIFG is set
+	__bis_SR_register(CPUOFF + GIE);
 }
 
-void i2cRead(unsigned char address)
+void i2cRead(i2cTransaction_t* trans)
 {
 	__disable_interrupt();
-	UCB1I2CSA = address;							// Load slave address
-	UCB1IE |= UCRXIE;								// Enable RX interrupt
-	if (repeatedStart != 0x01)
-		while(UCB1CTL1 & UCTXSTP);					// Ensure stop condition sent
-	UCB1CTL1 &= ~UCTR;								// RX mode
-	UCB1CTL1 |= UCTXSTT;							// Start Condition
-    __bis_SR_register(CPUOFF + GIE);				// sleep until UCB0RXIFG is set ...
+	// Set the current transaction
+	curTrans = trans;
+	// Load slave address
+	UCB1I2CSA = trans->slaveAddress;
+	// Enable RX interrupt
+	UCB1IE |= UCRXIE;
+	// If there is no repeated start condition
+	if (trans->repeatedStart != 0x01) {
+		// Ensure stop condition sent
+		while(UCB1CTL1 & UCTXSTP);
+	}
+	// RX mode
+	UCB1CTL1 &= ~UCTR;
+	// Start Condition
+	UCB1CTL1 |= UCTXSTT;
+	// sleep until UCB0RXIFG is set ...
+    __bis_SR_register(CPUOFF + GIE);
 }
 
 /**********************************************************************************************/
@@ -47,73 +62,47 @@ void i2cRead(unsigned char address)
 #pragma vector = USCI_B1_VECTOR
 __interrupt void USCI_B1_ISR(void)
 {
-
 	switch(UCB1IV) {
 	case USCI_I2C_UCRXIFG:
 	case USCI_I2C_UCTXIFG:
-		if (repeatedStart != 0x01)
+		// TX mode (UCTR == 1)
+		if(UCB1CTL1 & UCTR)
 		{
-			if(UCB1CTL1 & UCTR)							// TX mode (UCTR == 1)
+			// TRUE if more bytes remain
+			if (curTrans->dataLen--)
 			{
-				if (TX_ByteCtr)				  	  	    // TRUE if more bytes remain
-				{
-					TX_ByteCtr--;						// Decrement TX byte counter
-					UCB1TXBUF = TX_Data[TX_ByteCtr];	// Load TX buffer
-				}
-				else									// no more bytes to send
-				{
-					UCB1CTL1 |= UCTXSTP;				// I2C stop condition
-					UCB1IFG &= ~UCTXIFG;				// Clear USCI_B0 TX int flag
-					__bic_SR_register_on_exit(CPUOFF);	// Exit LPM0
-				}
+				UCB1TXBUF = *(curTrans->data);
+				curTrans->data++;
 			}
-			else // (UCTR == 0)							// RX mode
+			else
 			{
-				RX_ByteCtr--;					        // Decrement RX byte counter
-				if (RX_ByteCtr)					        // RxByteCtr != 0
-				{
-					RX_Data[RX_ByteCtr] = UCB1RXBUF;	// Get received byte
-					if (RX_ByteCtr == 1)				// Only one byte left?
-					UCB1CTL1 |= UCTXSTP;				// Generate I2C stop condition
+				if (curTrans->repeatedStart) {
+					// I2C stop condition
+					UCB1CTL1 |= UCTXSTP;
 				}
-				else									// RxByteCtr == 0
-				{
-					RX_Data[RX_ByteCtr] = UCB1RXBUF;	// Get final received byte
-					__bic_SR_register_on_exit(CPUOFF);	// Exit LPM0
-				}
+				// Clear TX interrupt flag
+				UCB1IFG &= ~UCTXIFG;
+				__bic_SR_register_on_exit(CPUOFF);
 			}
-
 		}
-		else if (repeatedStart == 0x01)
+		// (UCTR == 0) RX mode
+		else
 		{
-			if(UCB1CTL1 & UCTR)							// TX mode (UCTR == 1)
+			if (--(curTrans->dataLen))
 			{
-				if (TX_ByteCtr)				    	    // TRUE if more bytes remain
-				{
-					TX_ByteCtr--;						// Decrement TX byte counter
-					UCB1TXBUF = TX_Data[TX_ByteCtr];	// Load TX buffer
-				}
-				else									// no more bytes to send
-				{
-					//UCB0CTL1 |= UCTXSTP;				// I2C stop condition
-					UCB1IFG &= ~UCTXIFG;				// Clear USCI_B0 TX int flag
-					__bic_SR_register_on_exit(CPUOFF);	// Exit LPM0
+				// Get received byte
+				*(curTrans->data) = UCB1RXBUF;
+				curTrans->data++;
+				if (curTrans->dataLen == 1) {
+					// Generate I2C stop condition
+					UCB1CTL1 |= UCTXSTP;
 				}
 			}
-			else // (UCTR == 0)							// RX mode
+			else
 			{
-				RX_ByteCtr--;				  		    // Decrement RX byte counter
-				if (RX_ByteCtr)				  		    // RxByteCtr != 0
-				{
-					RX_Data[RX_ByteCtr] = UCB1RXBUF;	// Get received byte
-					if (RX_ByteCtr == 1)				// Only one byte left?
-					UCB1CTL1 |= UCTXSTP;				// Generate I2C stop condition
-				}
-				else									// RxByteCtr == 0
-				{
-					RX_Data[RX_ByteCtr] = UCB1RXBUF;	// Get final received byte
-					__bic_SR_register_on_exit(CPUOFF);	// Exit LPM0
-				}
+				*(curTrans->data) = UCB1RXBUF;
+				// Exit LPM0
+				__bic_SR_register_on_exit(CPUOFF);
 			}
 		}
 		break;

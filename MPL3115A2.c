@@ -14,35 +14,50 @@
 void setModeStandby(void)
 {
 
-
-    TX_Data[1] = MPL3115A2_CTRL_REG1;
-    TX_Data[0] = 0x00;
-    TX_ByteCtr = 2;
-    i2cWrite(slaveAddress);
+	i2cTransaction_t trans;
+	uint8_t txData[2];
+	txData[1] = MPL3115A2_CTRL_REG1;
+	txData[0] = 0x00;
+    trans.data = txData;
+    trans.dataLen = 2;
+    trans.slaveAddress = MPL3115A2_I2C_ADDRESS;
+    i2cWrite(&trans);
 }
 
 void setModeAltimeter(void)
 {
-    TX_Data[1] = MPL3115A2_CTRL_REG1;
-    TX_Data[0] = 0x80;
-    TX_ByteCtr = 2;
-    i2cWrite(slaveAddress);
+	i2cTransaction_t trans;
+	uint8_t txData[2];
+	txData[1] = MPL3115A2_CTRL_REG1;
+	txData[0] = 0x80;
+    trans.data = txData;
+    trans.dataLen = 2;
+    trans.slaveAddress = MPL3115A2_I2C_ADDRESS;
+    i2cWrite(&trans);
 }
 
 void enableEventFlags(void)
 {
-	TX_Data[1] = MPL3115A2_PT_DATA_CFG;
-	TX_Data[0] = 0x07;
-	TX_ByteCtr = 2;
-	i2cWrite(slaveAddress);
+	i2cTransaction_t trans;
+	uint8_t txData[2];
+	txData[1] = MPL3115A2_PT_DATA_CFG;
+	txData[0] = 0x07;
+    trans.data = txData;
+    trans.dataLen = 2;
+    trans.slaveAddress = MPL3115A2_I2C_ADDRESS;
+	i2cWrite(&trans);
 }
 
 void setModeActive(void)
 {
-    TX_Data[1] = MPL3115A2_CTRL_REG1;
-    TX_Data[0] = 0x01;
-    TX_ByteCtr = 2;
-    i2cWrite(slaveAddress);
+	i2cTransaction_t trans;
+	uint8_t txData[2];
+	txData[1] = MPL3115A2_CTRL_REG1;
+	txData[0] = 0x01;
+    trans.data = txData;
+    trans.dataLen = 2;
+    trans.slaveAddress = MPL3115A2_I2C_ADDRESS;
+    i2cWrite(&trans);
 }
 
 void setOversampleRate(int rate)
@@ -51,22 +66,30 @@ void setOversampleRate(int rate)
 		rate = 7;
 
 	rate <<= 3;
-	slaveAddress = 0xC1 >> 1;
-	TX_Data[0] = MPL3115A2_CTRL_REG1;
-	TX_ByteCtr = 1;
-	i2cWrite(slaveAddress);
+	uint8_t slaveAddress = 0xC1 >> 1;
+	i2cTransaction_t trans;
+	uint8_t txData[1];
+	txData[0] = MPL3115A2_CTRL_REG1;
+	trans.data = txData;
+	trans.dataLen = 1;
+	trans.repeatedStart = 1;
+	trans.slaveAddress = slaveAddress;
+	i2cWrite(&trans);
 
     unsigned char temp;
-    RX_ByteCtr = 2;
-	i2cRead(slaveAddress);
-	temp = RX_Data[0];
+    uint8_t rxData[2];
+    trans.data = rxData;
+    trans.dataLen = 2;
+    trans.repeatedStart = 0;
+	i2cRead(&trans);
+	temp = rxData[0];
 	temp &= 0xC7;
 	temp |= rate;
 
 	slaveAddress = 0xC0 >> 1;
-	TX_Data[1] = MPL3115A2_CTRL_REG1;
-	TX_Data[0] = temp;
-	TX_ByteCtr = 2;
+	txData[1] = MPL3115A2_CTRL_REG1;
+	txData[0] = temp;
+	trans.dataLen = 2;
 	i2cWrite(slaveAddress);
 }
 

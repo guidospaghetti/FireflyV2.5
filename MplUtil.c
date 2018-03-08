@@ -149,21 +149,33 @@ void readPressureRegs(uint8_t** pressure) {
 }
 
 void mplWriteReg(uint8_t address, uint8_t data) {
-	TX_Data[1] = address;
-	TX_Data[0] = data;
-	TX_ByteCtr = 2;
-	i2cWrite(MPL3115A2_I2C_ADDRESS);
+	i2cTransaction_t trans;
+	uint8_t txData[2];
+	txData[1] = address;
+	txData[0] = data;
+	trans.data = txData;
+	trans.dataLen = 2;
+	trans.repeatedStart = 0;
+	trans.slaveAddress = MPL3115A2_I2C_ADDRESS;
+	i2cWrite(&trans);
 }
 
 uint8_t mplReadReg(uint8_t address) {
-	TX_Data[0] = address;
-	TX_ByteCtr = 1;
-	RX_ByteCtr = 2;
-	repeatedStart = 1;
-	i2cWrite(MPL3115A2_I2C_ADDRESS);
+	i2cTransaction_t trans;
+	uint8_t txData[1];
+	uint8_t rxData[2];
+	txData[0] = address;
+	trans.data = txData;
+	trans.dataLen = 1;
+	trans.repeatedStart = 1;
+	trans.slaveAddress = MPL3115A2_I2C_ADDRESS;
 
-	i2cRead(MPL3115A2_I2C_ADDRESS);
-	repeatedStart = 0;
+	i2cWrite(&trans);
 
-	return RX_Data[1];
+	trans.data = rxData;
+	trans.dataLen = 2;
+	trans.repeatedStart = 0;
+	i2cRead(&trans);
+
+	return rxData[1];
 }

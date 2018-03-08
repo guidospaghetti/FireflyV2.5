@@ -11,7 +11,7 @@
 #include "MPU6050.h"
 
 #define SCALE   0x10
-
+#define MPU6050_I2C_ADDRESS MPU6050_ADDRESS_AD0_HIGH
 /**
  * @enum measurement_t
  * @brief All the types of measurements from the MPU6050
