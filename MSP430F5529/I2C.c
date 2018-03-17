@@ -31,7 +31,7 @@ void i2cWrite(i2cTransaction_t* trans)
 	while(UCB1CTL1 & UCTXSTP);
 	// TX mode and START condition
 	UCB1CTL1 |= UCTR + UCTXSTT;
-	// sleep until UCB0TXIFG is set
+	// sleep until UCB1TXIFG is set
 	__bis_SR_register(CPUOFF + GIE);
 }
 
@@ -45,7 +45,7 @@ void i2cRead(i2cTransaction_t* trans)
 	// Enable RX interrupt
 	UCB1IE |= UCRXIE;
 	// If there is no repeated start condition
-	if (trans->repeatedStart != 0x01) {
+	if (trans->repeatedStart != 1) {
 		// Ensure stop condition sent
 		while(UCB1CTL1 & UCTXSTP);
 	}
@@ -53,57 +53,91 @@ void i2cRead(i2cTransaction_t* trans)
 	UCB1CTL1 &= ~UCTR;
 	// Start Condition
 	UCB1CTL1 |= UCTXSTT;
-	// sleep until UCB0RXIFG is set ...
+	// sleep until UCB1RXIFG is set ...
     __bis_SR_register(CPUOFF + GIE);
 }
 
-/**********************************************************************************************/
-// USCIAB0TX_ISR
+#pragma vector = USCI_B0_VECTOR
+__interrupt void USCI_B0_ISR(void)
+{
+	switch(UCB0IV) {
+	case USCI_I2C_UCRXIFG:
+		if (--(curTrans->dataLen)) {
+			// Get received byte
+			*(curTrans->data) = UCB0RXBUF;
+			curTrans->data++;
+			if (curTrans->dataLen == 1) {
+				// Generate I2C stop condition
+				UCB0CTL1 |= UCTXSTP;
+			}
+		}
+		else {
+			*(curTrans->data) = UCB0RXBUF;
+			// Exit LPM0
+			__bic_SR_register_on_exit(CPUOFF);
+		}
+		break;
+	case USCI_I2C_UCTXIFG:
+		// TRUE if more bytes remain
+		if (curTrans->dataLen--) {
+			UCB0TXBUF = *(curTrans->data);
+			curTrans->data++;
+		}
+		else {
+			if (curTrans->repeatedStart == 0) {
+				// I2C stop condition
+				UCB0CTL1 |= UCTXSTP;
+			}
+			// Clear TX interrupt flag
+			UCB0IFG &= ~UCTXIFG;
+			__bic_SR_register_on_exit(CPUOFF);
+		}
+		break;
+	case USCI_I2C_UCNACKIFG:
+		//UCB0IFG &= ~UCNACKIFG;
+		//UCB0CTL1 |= UCSWRST;
+		//__bic_SR_register_on_exit(CPUOFF);
+		break;
+	default:
+		break;
+	}
+}
+
+
 #pragma vector = USCI_B1_VECTOR
 __interrupt void USCI_B1_ISR(void)
 {
 	switch(UCB1IV) {
 	case USCI_I2C_UCRXIFG:
-	case USCI_I2C_UCTXIFG:
-		// TX mode (UCTR == 1)
-		if(UCB1CTL1 & UCTR)
-		{
-			// TRUE if more bytes remain
-			if (curTrans->dataLen--)
-			{
-				UCB1TXBUF = *(curTrans->data);
-				curTrans->data++;
-			}
-			else
-			{
-				if (curTrans->repeatedStart) {
-					// I2C stop condition
-					UCB1CTL1 |= UCTXSTP;
-				}
-				// Clear TX interrupt flag
-				UCB1IFG &= ~UCTXIFG;
-				__bic_SR_register_on_exit(CPUOFF);
+		if (--(curTrans->dataLen)) {
+			// Get received byte
+			*(curTrans->data) = UCB1RXBUF;
+			curTrans->data++;
+			if (curTrans->dataLen == 1) {
+				// Generate I2C stop condition
+				UCB1CTL1 |= UCTXSTP;
 			}
 		}
-		// (UCTR == 0) RX mode
-		else
-		{
-			if (--(curTrans->dataLen))
-			{
-				// Get received byte
-				*(curTrans->data) = UCB1RXBUF;
-				curTrans->data++;
-				if (curTrans->dataLen == 1) {
-					// Generate I2C stop condition
-					UCB1CTL1 |= UCTXSTP;
-				}
+		else {
+			*(curTrans->data) = UCB1RXBUF;
+			// Exit LPM0
+			__bic_SR_register_on_exit(CPUOFF);
+		}
+		break;
+	case USCI_I2C_UCTXIFG:
+		// TRUE if more bytes remain
+		if (curTrans->dataLen--) {
+			UCB1TXBUF = *(curTrans->data);
+			curTrans->data++;
+		}
+		else {
+			if (curTrans->repeatedStart == 0) {
+				// I2C stop condition
+				UCB1CTL1 |= UCTXSTP;
 			}
-			else
-			{
-				*(curTrans->data) = UCB1RXBUF;
-				// Exit LPM0
-				__bic_SR_register_on_exit(CPUOFF);
-			}
+			// Clear TX interrupt flag
+			UCB1IFG &= ~UCTXIFG;
+			__bic_SR_register_on_exit(CPUOFF);
 		}
 		break;
 	case USCI_I2C_UCNACKIFG:
