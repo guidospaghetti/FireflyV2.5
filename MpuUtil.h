@@ -11,7 +11,7 @@
 #include "MPU6050.h"
 
 #define SCALE   0x10
-#define MPU6050_I2C_ADDRESS MPU6050_ADDRESS_AD0_HIGH
+#define MPU6050_I2C_ADDRESS MPU6050_ADDRESS_AD0_LOW
 /**
  * @enum measurement_t
  * @brief All the types of measurements from the MPU6050
@@ -39,13 +39,6 @@ typedef struct allMPUData_t {
 	float temp;
 } allMPUData_t;
 
-/**
- * @fn i2cReadReg(uint8_t regAddress, uint8_t slave)
- * @param regAddress 8-bit address of the register to read from
- * @param slave 7-bit slave address of the chip
- * @brief Reads a specified register assuming a repeated start condition
- */
-uint8_t i2cReadReg(uint8_t regAddress, uint8_t slave);
 
 /**
  * @fn readMeasurement(enum measurementMPU_t mm)
@@ -54,26 +47,6 @@ uint8_t i2cReadReg(uint8_t regAddress, uint8_t slave);
  */
 void readMeasurementMPU(measurementMPU_t mm, void* data);
 
-/**
- * @fn cvtTemp(int16_t temp)
- * @param temp Raw temperature data
- * @brief Returns the converted temperature
- */
-inline float cvtTemp(int16_t temp);
-
-/**
- * @fn cvtAccel(int16_t accel)
- * @param accel Raw acceleration data
- * @brief Returns the converted acceleration
- */
-inline float cvtAccel(int16_t accel);
-
-/**
- * @fn cvtGyro(int16_t gyro)
- * @param gyro Raw gyroscope data
- * *brief Returns the converted gyroscope
- */
-inline float cvtGyro(int16_t gyro);
 
 /**
  * @fn mpuInit();
