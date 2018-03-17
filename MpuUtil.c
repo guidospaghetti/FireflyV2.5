@@ -3,7 +3,6 @@
 #include "MpuUtil.h"
 
 /**
- * @fn i2cReadReg(uint8_t regAddress, uint8_t slave)
  * @param regAddress 8-bit address of the register to read from
  * @param slave 7-bit slave address of the chip
  * @brief Reads a specified register assuming a repeated start condition
@@ -44,8 +43,8 @@ float getTempMPU(void);
 uint8_t readRegister(uint8_t regAddress, uint8_t slave)
 {
 	i2cTransaction_t trans;
-	uint8_t txData[1];
-	uint8_t rxData[2];
+	uint8_t txData[1] = {};
+	uint8_t rxData[2] = {};
 	txData[0] = regAddress;
 	trans.data = txData;
 	trans.dataLen = 1;
@@ -55,10 +54,10 @@ uint8_t readRegister(uint8_t regAddress, uint8_t slave)
 
 	trans.data = rxData;
 	trans.dataLen = 2;
-	trans.repeatedStart = 0;
+	trans.repeatedStart = 1;
 	i2cRead(&trans);
 
-	return rxData[1];
+	return rxData[0];
 }
 
 void writeRegister(uint8_t regAddress, uint8_t data) {
@@ -180,13 +179,13 @@ inline float cvtAccel(int16_t accel) {
     // to the range selected
     switch (SCALE) {
     case 0x00:
-        return (~accel + 0x01) / (16384.0f / 2);
+        return (~accel + 0x01) / (16384.0f);
     case 0x08:
-        return (~accel + 0x01) / (8192.0f / 2);
+        return (~accel + 0x01) / (8192.0f);
     case 0x10:
-        return (~accel + 0x01) / (4096.0f / 2);
+        return (~accel + 0x01) / (4096.0f);
     case 0x18:
-        return (~accel + 0x01) / (2048.0f / 2);
+        return (~accel + 0x01) / (2048.0f);
     default:
         return 0;
     }
@@ -197,13 +196,13 @@ inline float cvtGyro(int16_t gyro) {
     // to the range selected
     switch (SCALE) {
     case 0x00:
-        return (~gyro + 0x01) / (131.0f / 2);
+        return (~gyro + 0x01) / (131.0f);
     case 0x08:
-        return (~gyro + 0x01) / (65.5f / 2);
+        return (~gyro + 0x01) / (65.5f);
     case 0x10:
-        return (~gyro + 0x01) / (32.8f / 2);
+        return (~gyro + 0x01) / (32.8f);
     case 0x18:
-        return (~gyro + 0x01) / (16.4f / 2);
+        return (~gyro + 0x01) / (16.4f);
     default:
         return 0;
     }
@@ -229,7 +228,7 @@ void mpuInit() {
     writeRegister(MPU6050_RA_PWR_MGMT_1, 0x80);
 
     // Delay to ensure correct data
-    for(i = 0; i < 1000; i++);
+    __delay_cycles(50000);
 
     // Clear register reset pin (unsure if this is required)
     writeRegister(MPU6050_RA_PWR_MGMT_1, 0x00);
