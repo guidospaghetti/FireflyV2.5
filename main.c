@@ -1,5 +1,7 @@
 #include <msp430.h> 
 #include "MpuUtil.h"
+#include "MplUtil.h"
+#include "MTK3339.h"
 
 void setClock16MHz(void);
 
@@ -7,14 +9,30 @@ int main(void) {
     WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
 
     setClock16MHz();
+
+    // Enable pins 3.0 and 3.1 for I2C operation
+    //P3SEL |= BIT0 | BIT1;
+    // Enable pins 4.1 and 4.2 for I2C operation
+    P4SEL |= BIT1 | BIT2;
+
+    // Initialize the I2C peripheral
+    i2cInit(1);
+
+    // Initialize MPU6050
     mpuInit();
-    allMPUData_t data;
+
+    // Initialize MPL3115A2
+    //mplInit(ALTITUDE_MODE);
+    allMPUData_t dataMPU;
+    //allMPLData_t dataMPL;
+    //gpsData_t gps;
 
     while(1) {
-    	readMeasurementMPU(ALL_MPU, (void*)&data);
-
+    	readMeasurementMPU(ALL_MPU, (void*)&dataMPU);
+    	//readMeasurementMPL(ALL_MPL, (void*)&dataMPL);
+    	//checkForUpdate(&gps);
     }
-	return (int)data.temp;
+	return (int)dataMPU.temp;
 }
 
 void setClock16MHz(void) {

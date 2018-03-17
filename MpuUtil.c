@@ -212,14 +212,6 @@ void mpuInit() {
 
     volatile int i;
 
-    // Enable pins 3.0 and 3.1 for I2C operation
-    //P3SEL |= BIT0 | BIT1;
-    // Enable pins 4.1 and 4.2 for I2C operation
-    P4SEL |= BIT1 | BIT2;
-
-    // Initialize the I2C peripheral
-    i2cInit();
-
     // For some reason, the chip doesn't respond if a register isn't read first
     uint8_t buffer[2];
     buffer[0] = readRegister(MPU6050_RA_PWR_MGMT_1, MPU6050_I2C_ADDRESS);
