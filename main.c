@@ -10,9 +10,11 @@ int main(void) {
     mpuInit();
     allMPUData_t data;
 
-    readMeasurementMPU(ALL_MPU, (void*)&data);
+    while(1) {
+    	readMeasurementMPU(ALL_MPU, (void*)&data);
 
-	return 0;
+    }
+	return (int)data.temp;
 }
 
 void setClock16MHz(void) {
