@@ -18,9 +18,10 @@ extern "C"
 {
 #endif
 
-#ifndef MPL3115A2_I2C_ADDRESS
 #define MPL3115A2_I2C_ADDRESS 0x60
-#endif
+#define MPL3115A2_I2C_8BIT_READ_ADDRESS 0xC1
+#define MPL3115A2_I2C_8BIT_WRITE_ADDRESS 0xC0
+#define MPL3115A2_I2C_CHANNEL 1
 
 #define MPL3115A2_OS_RATIO_1 0
 #define MPL3115A2_OS_RATIO_2 1
@@ -35,13 +36,6 @@ extern "C"
 #define MPL3115A2_CONVERSION_TIME 512000
 #endif
 
-
-void setModeStandby(void);
-void setModeAltimeter(void);
-void enableEventFlags(void);
-void setModeActive(void);
-
-void setOversampleRate(int rate);
 //
 //typedef struct {
 //i2c_t i2c;
