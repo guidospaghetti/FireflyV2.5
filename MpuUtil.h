@@ -12,12 +12,13 @@
 
 #define SCALE   0x10
 #define MPU6050_I2C_ADDRESS MPU6050_ADDRESS_AD0_LOW
+#define MPU6050_I2C_CHANNEL 1
+
 /**
  * @enum measurement_t
  * @brief All the types of measurements from the MPU6050
  *
  */
-
 typedef enum measurementMPU_t {
     ACCEL_X,        /**< Get the acceleration in the X direction*/
     ACCEL_Y,        /**< Get the acceleration in the Y direction*/

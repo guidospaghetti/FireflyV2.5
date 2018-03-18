@@ -3,19 +3,38 @@
 
 i2cTransaction_t* curTrans;
 
-void i2cInit(void)
+void i2cInit(uint8_t channel)
 {
-	// Enable SW reset
-	UCB1CTL1 = UCSWRST;
-	// I2C Master, synchronous mode
-	UCB1CTL0 = UCMST + UCMODE_3 + UCSYNC;
-	// Use SMCLK, keep SW reset
-	UCB1CTL1 |= UCSSEL__SMCLK;
-	// fSCL = SMCLK/(160 + 0*256) = 100kHz Assuming SMCLK = 16 MHz
-	UCB1BR0 = 160;
-	UCB1BR1 = 0;
-	// Clear SW reset, resume operation
-	UCB1CTL1 &= ~UCSWRST;
+	switch (channel) {
+	case 0:
+		// Enable SW reset
+		UCB0CTL1 = UCSWRST;
+		// I2C Master, synchronous mode
+		UCB0CTL0 = UCMST + UCMODE_3 + UCSYNC;
+		// Use SMCLK, keep SW reset
+		UCB0CTL1 |= UCSSEL__SMCLK;
+		// fSCL = SMCLK/(160 + 0*256) = 100kHz Assuming SMCLK = 16 MHz
+		UCB0BR0 = 160;
+		UCB0BR1 = 0;
+		// Clear SW reset, resume operation
+		UCB0CTL1 &= ~UCSWRST;
+		break;
+	case 1:
+		// Enable SW reset
+		UCB1CTL1 = UCSWRST;
+		// I2C Master, synchronous mode
+		UCB1CTL0 = UCMST + UCMODE_3 + UCSYNC;
+		// Use SMCLK, keep SW reset
+		UCB1CTL1 |= UCSSEL__SMCLK;
+		// fSCL = SMCLK/(160 + 0*256) = 100kHz Assuming SMCLK = 16 MHz
+		UCB1BR0 = 160;
+		UCB1BR1 = 0;
+		// Clear SW reset, resume operation
+		UCB1CTL1 &= ~UCSWRST;
+		break;
+	default:
+		break;
+	}
 }
 
 void i2cWrite(i2cTransaction_t* trans)
@@ -23,15 +42,32 @@ void i2cWrite(i2cTransaction_t* trans)
 	__disable_interrupt();
 	// Set the current transaction
 	curTrans = trans;
-	// Store slave address
-	UCB1I2CSA = trans->slaveAddress;
-	// Enable TX interrupt
-	UCB1IE |= UCTXIE;
-	// Ensure stop condition sent
-	while(UCB1CTL1 & UCTXSTP);
-	// TX mode and START condition
-	UCB1CTL1 |= UCTR + UCTXSTT;
-	// sleep until UCB1TXIFG is set
+
+	switch(curTrans->channel) {
+	case 0:
+		// Store slave address
+		UCB0I2CSA = trans->slaveAddress;
+		// Enable TX interrupt
+		UCB0IE |= UCTXIE;
+		// Ensure stop condition sent
+		while(UCB0CTL1 & UCTXSTP);
+		// TX mode and START condition
+		UCB0CTL1 |= UCTR + UCTXSTT;
+		break;
+	case 1:
+		// Store slave address
+		UCB1I2CSA = trans->slaveAddress;
+		// Enable TX interrupt
+		UCB1IE |= UCTXIE;
+		// Ensure stop condition sent
+		while(UCB1CTL1 & UCTXSTP);
+		// TX mode and START condition
+		UCB1CTL1 |= UCTR + UCTXSTT;
+		break;
+	default:
+		return;
+	}
+	// sleep until UCBxTXIFG is set
 	__bis_SR_register(CPUOFF + GIE);
 }
 
@@ -40,20 +76,42 @@ void i2cRead(i2cTransaction_t* trans)
 	__disable_interrupt();
 	// Set the current transaction
 	curTrans = trans;
-	// Load slave address
-	UCB1I2CSA = trans->slaveAddress;
-	// Enable RX interrupt
-	UCB1IE |= UCRXIE;
-	// If there is no repeated start condition
-	if (trans->repeatedStart != 1) {
-		// Ensure stop condition sent
-		while(UCB1CTL1 & UCTXSTP);
+
+	switch(curTrans->channel) {
+	case 0:
+		// Load slave address
+		UCB0I2CSA = trans->slaveAddress;
+		// Enable RX interrupt
+		UCB0IE |= UCRXIE;
+		// If there is no repeated start condition
+		if (trans->repeatedStart != 1) {
+			// Ensure stop condition sent
+			while(UCB0CTL1 & UCTXSTP);
+		}
+		// RX mode
+		UCB0CTL1 &= ~UCTR;
+		// Start Condition
+		UCB0CTL1 |= UCTXSTT;
+		break;
+	case 1:
+		// Load slave address
+		UCB1I2CSA = trans->slaveAddress;
+		// Enable RX interrupt
+		UCB1IE |= UCRXIE;
+		// If there is no repeated start condition
+		if (trans->repeatedStart != 1) {
+			// Ensure stop condition sent
+			while(UCB1CTL1 & UCTXSTP);
+		}
+		// RX mode
+		UCB1CTL1 &= ~UCTR;
+		// Start Condition
+		UCB1CTL1 |= UCTXSTT;
+		break;
+	default:
+		return;
 	}
-	// RX mode
-	UCB1CTL1 &= ~UCTR;
-	// Start Condition
-	UCB1CTL1 |= UCTXSTT;
-	// sleep until UCB1RXIFG is set ...
+	// sleep until UCBxRXIFG is set ...
     __bis_SR_register(CPUOFF + GIE);
 }
 

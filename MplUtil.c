@@ -40,7 +40,7 @@ void mplInit(modeMPL_t mode_) {
 void altitudeMode(void) {
 	// Write 1 0 111 0 0 0, Put in altitude mode, No RAW data, Oversampling rate of 128, reset disabled, do not use one shot, put in standby mode
 	mplWriteReg(MPL3115A2_CTRL_REG1, 0xB8);
-	// Write 00000 1 1 1, Reserver, Enable data ready flag, pressure/altitude data ready flag, and temperature data ready flag
+	// Write 00000 1 1 1, Reserved, Enable data ready flag, pressure/altitude data ready flag, and temperature data ready flag
 	mplWriteReg(MPL3115A2_PT_DATA_CFG, 0x07);
 	// Everything from before but the put in active mode instead of standby, determined by last bit
 	mplWriteReg(MPL3115A2_CTRL_REG1, 0xB9);
@@ -148,15 +148,51 @@ void readPressureRegs(uint8_t** pressure) {
 	*pressure = output;
 }
 
+void setModeStandby(void)
+{
+	mplWriteReg(MPL3115A2_CTRL_REG1, 0x00);
+}
+
+void setModeAltimeter(void)
+{
+	mplWriteReg(MPL3115A2_CTRL_REG1, 0x80);
+}
+
+void enableEventFlags(void)
+{
+	mplWriteReg(MPL3115A2_PT_DATA_CFG, 0x07);
+}
+
+void setModeActive(void)
+{
+	mplWriteReg(MPL3115A2_CTRL_REG1, 0x01);
+}
+
+void setOversampleRate(int rate)
+{
+	if (rate > 7) {
+		rate = 7;
+	}
+
+	rate <<= 3;
+
+	uint8_t temp = mplReadReg(MPL3115A2_CTRL_REG1);
+	temp &= 0xC7;
+	temp |= rate;
+
+	mplWriteReg(MPL3115A2_CTRL_REG1, temp);
+}
+
 void mplWriteReg(uint8_t address, uint8_t data) {
 	i2cTransaction_t trans;
 	uint8_t txData[2];
-	txData[1] = address;
-	txData[0] = data;
+	txData[0] = address;
+	txData[1] = data;
 	trans.data = txData;
 	trans.dataLen = 2;
 	trans.repeatedStart = 0;
 	trans.slaveAddress = MPL3115A2_I2C_ADDRESS;
+	trans.channel = MPL3115A2_I2C_CHANNEL;
 	i2cWrite(&trans);
 }
 
@@ -169,13 +205,16 @@ uint8_t mplReadReg(uint8_t address) {
 	trans.dataLen = 1;
 	trans.repeatedStart = 1;
 	trans.slaveAddress = MPL3115A2_I2C_ADDRESS;
+	trans.channel = MPL3115A2_I2C_CHANNEL;
 
 	i2cWrite(&trans);
 
 	trans.data = rxData;
 	trans.dataLen = 2;
-	trans.repeatedStart = 0;
+	trans.repeatedStart = 1;
 	i2cRead(&trans);
 
-	return rxData[1];
+	return rxData[0];
 }
+
+

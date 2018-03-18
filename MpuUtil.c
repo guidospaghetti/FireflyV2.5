@@ -50,6 +50,7 @@ uint8_t readRegister(uint8_t regAddress, uint8_t slave)
 	trans.dataLen = 1;
 	trans.repeatedStart = 1;
 	trans.slaveAddress = slave;
+	trans.channel = MPU6050_I2C_CHANNEL;
 	i2cWrite(&trans);
 
 	trans.data = rxData;
@@ -69,6 +70,7 @@ void writeRegister(uint8_t regAddress, uint8_t data) {
 	trans.dataLen = 2;
 	trans.repeatedStart = 0;
 	trans.slaveAddress = MPU6050_I2C_ADDRESS;
+	trans.channel = MPU6050_I2C_CHANNEL;
 	i2cWrite(&trans);
 }
 
