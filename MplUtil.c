@@ -11,8 +11,8 @@
 #include "MPL3115A2.h"
 #include "I2C.h"
 
-#define Q16_4_FRACTION	0.0625
-#define Q18_2_FRACTION	0
+#define Q16_4_FRACTION	0.0625f
+#define Q18_2_FRACTION	0.25f
 #define Q8_4_FRACTION	Q16_4_FRACTION
 
 void mplWriteReg(uint8_t address, uint8_t data);
@@ -49,7 +49,7 @@ void altitudeMode(void) {
 void pressureMode(void) {
 	// Write 1 0 111 0 0 0, Put in pressure mode, No RAW data, Oversampling rate of 128, reset disabled, do not use one shot, put in standby mode
 	mplWriteReg(MPL3115A2_CTRL_REG1, 0x38);
-	// Write 00000 1 1 1, Reserver, Enable data ready flag, pressure/altitude data ready flag, and temperature data ready flag
+	// Write 00000 1 1 1, Reserved, Enable data ready flag, pressure/altitude data ready flag, and temperature data ready flag
 	mplWriteReg(MPL3115A2_PT_DATA_CFG, 0x07);
 	// Everything from before but the put in active mode instead of standby, determined by last bit
 	mplWriteReg(MPL3115A2_CTRL_REG1, 0x39);

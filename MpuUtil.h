@@ -40,14 +40,12 @@ typedef struct allMPUData_t {
 	float temp;
 } allMPUData_t;
 
-
 /**
  * @fn readMeasurement(enum measurementMPU_t mm)
  * @param mm Type of measurement to read
  * @brief Returns the current value of the specified sensor
  */
 void readMeasurementMPU(measurementMPU_t mm, void* data);
-
 
 /**
  * @fn mpuInit();
