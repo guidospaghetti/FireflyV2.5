@@ -7,6 +7,8 @@ void i2cInit(uint8_t channel)
 {
 	switch (channel) {
 	case 0:
+		// Enable pins for I2C
+		P3SEL |= BIT0 | BIT1;
 		// Enable SW reset
 		UCB0CTL1 = UCSWRST;
 		// I2C Master, synchronous mode
@@ -20,6 +22,8 @@ void i2cInit(uint8_t channel)
 		UCB0CTL1 &= ~UCSWRST;
 		break;
 	case 1:
+		// Enable pins for I2C
+	    P4SEL |= BIT1 | BIT2;
 		// Enable SW reset
 		UCB1CTL1 = UCSWRST;
 		// I2C Master, synchronous mode
