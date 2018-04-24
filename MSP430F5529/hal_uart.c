@@ -11,11 +11,10 @@
 uint8_t dataAvailable0, dataAvailable1;
 
 void hal_UART_Init(void) {
+
 	// Set pins for UARTA0 and A1
 	P3SEL |= BIT3 + BIT4;
 	P4SEL |= BIT4 + BIT5;
-
-
 	// Set software reset pin GPS
 	UCA0CTL1 = UCSWRST;
 	// Set clock to SMclk
