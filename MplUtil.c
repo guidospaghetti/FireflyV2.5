@@ -22,19 +22,21 @@ float getAltitude(void);
 float getTempMPL(void);
 void altitudeMode(void);
 void pressureMode(void);
-void readPressureRegs(uint8_t** pressure);
 
 modeMPL_t mode;
 
 void mplInit(modeMPL_t mode_) {
 	mode = mode_;
-	if (mode == PRESSURE_MODE) {
-		pressureMode();
-	}
-	else if (mode == ALTITUDE_MODE) {
-		altitudeMode();
-	}
 
+	uint8_t who = mplReadReg(MPL3115A2_WHO_AM_I);
+	if (who == 0xC4) {
+		if (mode == PRESSURE_MODE) {
+			pressureMode();
+		}
+		else if (mode == ALTITUDE_MODE) {
+			altitudeMode();
+		}
+	}
 }
 
 void altitudeMode(void) {
@@ -97,7 +99,7 @@ void readMeasurementMPL(measurementMPL_t mm, void* output) {
 		temp = getTempMPL();
 
 		all.pressure = pressure;
-		all.temperature = temp;
+		all.temp = temp;
 		*(allMPLData_t*)output = all;
 		return;
 	}
@@ -108,8 +110,11 @@ void readMeasurementMPL(measurementMPL_t mm, void* output) {
 }
 
 float getPressure(void) {
-	uint8_t* output;
-	readPressureRegs(&output);
+	uint8_t output[3];
+
+	output[2] = mplReadReg(MPL3115A2_OUT_P_MSB);
+	output[1] = mplReadReg(MPL3115A2_OUT_P_CSB);
+	output[0] = mplReadReg(MPL3115A2_OUT_P_LSB);
 
 	int16_t whole = ((int16_t)output[2] << 8) | (int16_t)output[1];
 	float fraction = (output[0] >> 4) * Q16_4_FRACTION;
@@ -118,8 +123,11 @@ float getPressure(void) {
 }
 
 float getAltitude(void) {
-	uint8_t* output;
-	readPressureRegs(&output);
+	uint8_t output[3];
+
+	output[2] = mplReadReg(MPL3115A2_OUT_P_MSB);
+	output[1] = mplReadReg(MPL3115A2_OUT_P_CSB);
+	output[0] = mplReadReg(MPL3115A2_OUT_P_LSB);
 
 	int32_t whole = ((int32_t)output[2] << 10) | ((int32_t)output[1] << 2) | (int32_t)output[0] >> 6;
 	float fraction = ((output[0] & 0x30) >> 4) * Q18_2_FRACTION;
@@ -138,15 +146,6 @@ float getTempMPL(void) {
 	return (float)whole + fraction;
 }
 
-void readPressureRegs(uint8_t** pressure) {
-	uint8_t output[3];
-
-	output[2] = mplReadReg(MPL3115A2_OUT_P_MSB);
-	output[1] = mplReadReg(MPL3115A2_OUT_P_CSB);
-	output[0] = mplReadReg(MPL3115A2_OUT_P_LSB);
-
-	*pressure = output;
-}
 
 void setModeStandby(void)
 {
@@ -212,6 +211,7 @@ uint8_t mplReadReg(uint8_t address) {
 	trans.data = rxData;
 	trans.dataLen = 2;
 	trans.repeatedStart = 1;
+	trans.slaveAddress = MPL3115A2_I2C_ADDRESS;
 	i2cRead(&trans);
 
 	return rxData[0];

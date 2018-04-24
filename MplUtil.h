@@ -21,7 +21,7 @@ typedef enum measurementMPL_t {
 
 typedef struct allMPLData_t {
 	float pressure;
-	float temperature;
+	float temp;
 } allMPLData_t;
 
 void mplInit(modeMPL_t mode);
