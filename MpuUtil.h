@@ -11,8 +11,8 @@
 #include "MPU6050.h"
 
 #define SCALE   0x10
-#define MPU6050_I2C_ADDRESS MPU6050_ADDRESS_AD0_LOW
-#define MPU6050_I2C_CHANNEL 1
+#define MPU6050_I2C_ADDRESS MPU6050_ADDRESS_AD0_HIGH
+#define MPU6050_I2C_CHANNEL 0
 
 /**
  * @enum measurement_t
