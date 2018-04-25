@@ -196,7 +196,7 @@ void parseResponse(char* response, gpsData_t* gps) {
 		gps->location.EW = *allData[PMTK_RMC_EW_INDICATOR];
 		gps->speed = atof(allData[PMTK_RMC_SPEED_OVER_GND]);
 		gps->heading = atof(allData[PMTK_RMC_COURSE_OVER_GND]);
-		uint32_t date = atoi(allData[PMTK_RMC_DATE]);
+		uint32_t date = strtoul(allData[PMTK_RMC_DATE], NULL, 0);
 		gps->time.year = date % 100;
 		date /= 100;
 		gps->time.month = date % 100;
