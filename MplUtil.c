@@ -49,7 +49,7 @@ void altitudeMode(void) {
 }
 
 void pressureMode(void) {
-	// Write 1 0 111 0 0 0, Put in pressure mode, No RAW data, Oversampling rate of 128, reset disabled, do not use one shot, put in standby mode
+	// Write 0 0 111 0 0 0, Put in pressure mode, No RAW data, Oversampling rate of 128, reset disabled, do not use one shot, put in standby mode
 	mplWriteReg(MPL3115A2_CTRL_REG1, 0x38);
 	// Write 00000 1 1 1, Reserved, Enable data ready flag, pressure/altitude data ready flag, and temperature data ready flag
 	mplWriteReg(MPL3115A2_PT_DATA_CFG, 0x07);
@@ -116,21 +116,22 @@ float getPressure(void) {
 	output[1] = mplReadReg(MPL3115A2_OUT_P_CSB);
 	output[0] = mplReadReg(MPL3115A2_OUT_P_LSB);
 
-	int16_t whole = ((int16_t)output[2] << 8) | (int16_t)output[1];
-	float fraction = (output[0] >> 4) * Q16_4_FRACTION;
+	int32_t whole = ((int32_t)output[2] << 10) | ((int32_t)output[1] << 2) | (int32_t)output[0] >> 6;
+	float fraction = ((output[0] & 0x30) >> 4) * Q18_2_FRACTION;
 
 	return (float)whole + fraction;
 }
 
 float getAltitude(void) {
+
 	uint8_t output[3];
 
 	output[2] = mplReadReg(MPL3115A2_OUT_P_MSB);
 	output[1] = mplReadReg(MPL3115A2_OUT_P_CSB);
 	output[0] = mplReadReg(MPL3115A2_OUT_P_LSB);
 
-	int32_t whole = ((int32_t)output[2] << 10) | ((int32_t)output[1] << 2) | (int32_t)output[0] >> 6;
-	float fraction = ((output[0] & 0x30) >> 4) * Q18_2_FRACTION;
+	int16_t whole = ((int16_t)output[2] << 8) | (int16_t)output[1];
+	float fraction = (output[0] >> 4) * Q16_4_FRACTION;
 
 	return (float)whole + fraction;
 }
