@@ -24,6 +24,7 @@ void msp_setup(void);
 void cc1120Init(void);
 void sendMPUMPL(allMPUData_t* mpu, allMPLData_t* mpl);
 void setClock16MHz(void);
+void sendGPSData(gpsData_t* gps);
 
 int main(void) {
 	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
@@ -51,8 +52,11 @@ int main(void) {
     while(1) {
     	readMeasurementMPU(ALL_MPU, (void*)&dataMPU);
     	readMeasurementMPL(ALL_MPL, (void*)&dataMPL);
-    	sendMPUMPL(&dataMPU, &dataMPL);
-    	checkForUpdate(&gps);
+    	uint8_t update = checkForUpdate(&gps);
+    	//sendMPUMPL(&dataMPU, &dataMPL);
+    	if (update) {
+    		sendGPSData(&gps);
+    	}
     	__no_operation();
     }
 	return (int)dataMPL.temp + (int)dataMPU.temp;
@@ -140,6 +144,25 @@ void setClock16MHz(void) {
 	} while (SFRIFG1&OFIFG);                   // Test oscillator fault flag
 
 	return;
+}
+
+void sendGPSData(gpsData_t* gps) {
+	char buffer[150];
+	sprintf(buffer,
+			"Latitude: %f %c Longitude: %f %c Altitude: %f\r\n"
+			"Time: %f MM/DD/YY: %d/%d/%d Fix: %d\r\n",
+			gps->location.latitude,
+			(gps->location.NS ? gps->location.NS : 'X'),
+			gps->location.longitude,
+			(gps->location.EW ? gps->location.EW : 'X'),
+			gps->location.altitude,
+			gps->time.utcTime,
+			gps->time.month,
+			gps->time.day,
+			gps->time.year,
+			gps->fix);
+
+	sendUARTA1(buffer, strlen(buffer));
 }
 
 #pragma vector=WDT_VECTOR
