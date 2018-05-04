@@ -78,13 +78,13 @@ extern "C" {
 #define     RF_CS_N_PORT_SEL       P4SEL
 #define     RF_CS_N_PORT_DIR       P4DIR
 #define     RF_CS_N_PORT_OUT       P4OUT
-#define     RF_CS_N_PIN            BIT4
+#define     RF_CS_N_PIN            BIT6
 
 /* Transciever optional reset signal */
-#define     RF_RESET_N_PORT_SEL       P2SEL
-#define     RF_RESET_N_PORT_DIR       P2DIR
-#define     RF_RESET_N_PORT_OUT       P2OUT
-#define     RF_RESET_N_PIN            BIT6
+#define     RF_RESET_N_PORT_SEL       P5SEL
+#define     RF_RESET_N_PORT_DIR       P5DIR
+#define     RF_RESET_N_PORT_OUT       P5OUT
+#define     RF_RESET_N_PIN            BIT2
 
 /* CC1190 Control signals */
 #define    RF_LNA_EN_PxOUT         P1OUT
@@ -96,15 +96,15 @@ extern "C" {
 #define    RF_PA_EN_PIN            BIT7
 
 /* Transceiver interrupt configuration */
-#define     RF_PORT_VECTOR         TIMERB0_VECTOR
-#define     RF_GDO_OUT             P4OUT // Unused
-#define     RF_GDO_DIR             P4DIR // Unused
-#define     RF_GDO_IN              ((TB0CCTL0 & CCI) << 1)
-#define     RF_GDO_SEL             P4SEL // Unused
-#define     RF_GDO_PxIES           P2IES // Handled case by case
-#define     RF_GDO_PxIFG           ((TB0CCTL0 & CCIFG) << 4)
-#define     RF_GDO_PxIE            TB0CCTL0
-#define     RF_GDO_PIN             BIT4
+#define     RF_PORT_VECTOR         PORT1_VECTOR//TIMERB0_VECTOR
+#define     RF_GDO_OUT             P1OUT //P4OUT // Unused
+#define     RF_GDO_DIR             P1DIR //P4DIR // Unused
+#define     RF_GDO_IN              P1IN  //((TB0CCTL0 & CCI) << 1)
+#define     RF_GDO_SEL             P1SEL //P4SEL // Unused
+#define     RF_GDO_PxIES           P1IES // Handled case by case
+#define     RF_GDO_PxIFG           P1IFG  //((TB0CCTL0 & CCIFG) << 4)
+#define     RF_GDO_PxIE            P1IE  //TB0CCTL0
+#define     RF_GDO_PIN             BIT5
 
 /* Optional button interrupt configuration */
 #define     BUTTON_VECTOR          PORT1_VECTOR

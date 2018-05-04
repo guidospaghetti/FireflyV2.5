@@ -831,10 +831,10 @@ int radio_wait_for_idle(unsigned short max_hold) {
 		rf_end_packet = 0;  // initialize global variable for use in this function
 
 		/* setup the interrupt */
-		//RF_GDO_PxIES |= RF_GDO_PIN;       // Int on falling edge (end of pkt)
-		TB0CCTL0 |= CM1;
-		//RF_GDO_PxIFG &= ~RF_GDO_PIN;      // Clear flag
-		TB0CCTL0 &= ~CCIFG;
+		RF_GDO_PxIES |= RF_GDO_PIN;       // Int on falling edge (end of pkt)
+		//TB0CCTL0 |= CM1;
+		RF_GDO_PxIFG &= ~RF_GDO_PIN;      // Clear flag
+		//TB0CCTL0 &= ~CCIFG;
 		RF_GDO_PxIE |= RF_GDO_PIN;        // Enable int on end of packet
 
 		/* enabled timeout if requested */
@@ -885,8 +885,8 @@ int radio_is_busy(void) {
 	while (RF_GDO_IN & RF_GDO_PIN);
 
 	// Wait GDO0 to clear -> end of pkt
-	//RF_GDO_PxIFG &= ~RF_GDO_PIN;          // After pkt TX, this flag is set.
-	TB0CCTL0 &= ~CCIFG;
+	RF_GDO_PxIFG &= ~RF_GDO_PIN;          // After pkt TX, this flag is set.
+	//TB0CCTL0 &= ~CCIFG;
 
 	return(0);
 }
@@ -907,8 +907,8 @@ int radio_is_busy(void) {
  */
 int radio_pending_packet(void) {
 
-	//RF_GDO_PxIES |= RF_GDO_PIN;       // Int on falling edge (end of pkt)
-	TB0CCTL0 |= CM1;
+	RF_GDO_PxIES |= RF_GDO_PIN;       // Int on falling edge (end of pkt)
+	//TB0CCTL0 |= CM1;
 	RF_GDO_PxIE |= RF_GDO_PIN;        // Enable int on end of packet
 
 	return rf_end_packet;
@@ -930,8 +930,8 @@ int radio_pending_packet(void) {
  */
 int radio_clear_pending_packet(void) {
 
-	//RF_GDO_PxIES &= ~RF_GDO_PIN;       // Int on falling edge (end of pkt)
-	TB0CCTL0 |= CM0;
+	RF_GDO_PxIES &= ~RF_GDO_PIN;       // Int on falling edge (end of pkt)
+	//TB0CCTL0 |= CM0;
 	RF_GDO_PxIE &= ~RF_GDO_PIN;        // Enable int on end of packet
 
 	rf_end_packet = 0;
@@ -1179,18 +1179,18 @@ int radio_freq_error(void) {
 #pragma vector=RF_PORT_VECTOR
 __interrupt void radio_isr(void) {
 
-	//if(RF_GDO_PxIFG & RF_GDO_PIN) {
+	if(RF_GDO_PxIFG & RF_GDO_PIN) {
 
 		// Clear LPM0 bits from 0(SR)
 		__bic_SR_register_on_exit(LPM3_bits);
 
 		// clear the interrupt flag
-		//RF_GDO_PxIFG &= ~RF_GDO_PIN;
-		TB0CCTL0 &= ~CCIFG;
+		RF_GDO_PxIFG &= ~RF_GDO_PIN;
+		//TB0CCTL0 &= ~CCIFG;
 
 		// indicate that end of packet has been found
 		rf_end_packet = 1;
-	//}
+	}
 }
 
 #endif
