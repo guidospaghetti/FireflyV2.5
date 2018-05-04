@@ -20,11 +20,22 @@ trx_cfg_struct trx_cfg;
 extern unsigned long volatile time_counter;
 unsigned char wakeup_on_wdt;
 
+typedef union packet_t {
+	struct gps {
+		location_t location;
+		float speed;
+		uint8_t fix;
+		uint8_t status;
+	} gps;
+	uint8_t bytes[20];
+} packet_t;
+
 void msp_setup(void);
 void cc1120Init(void);
 void sendMPUMPL(allMPUData_t* mpu, allMPLData_t* mpl);
 void setClock16MHz(void);
-void sendGPSData(gpsData_t* gps);
+void sendGPSDataUART(gpsData_t* gps);
+void sendGPSDataTrx(gpsData_t* gps);
 
 int main(void) {
 	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
@@ -47,7 +58,7 @@ int main(void) {
     // Initialize MPL3115A2
     mplInit(ALTITUDE_MODE);
 
-    //cc1120Init();
+    cc1120Init();
 
     while(1) {
     	readMeasurementMPU(ALL_MPU, (void*)&dataMPU);
@@ -55,10 +66,12 @@ int main(void) {
     	uint8_t update = checkForUpdate(&gps);
     	//sendMPUMPL(&dataMPU, &dataMPL);
     	if (update) {
-    		sendGPSData(&gps);
+    		sendGPSDataUART(&gps);
+    		sendGPSDataTrx(&gps);
     	}
     	__no_operation();
     }
+
 	return (int)dataMPL.temp + (int)dataMPU.temp;
 }
 
@@ -110,6 +123,10 @@ void cc1120Init(void) {
 
 	trx_cfg.b_length = TX_BUFF_SIZE;
 	rf_default_setup(&trx_cfg);
+
+	set_rf_packet_length(trx_cfg.b_length);
+	radio_set_freq(trx_cfg.start_freq+(trx_cfg.ch_spc*trx_cfg.rf_channel));
+
 }
 
 void sendMPUMPL(allMPUData_t* mpu, allMPLData_t* mpl) {
@@ -146,7 +163,7 @@ void setClock16MHz(void) {
 	return;
 }
 
-void sendGPSData(gpsData_t* gps) {
+void sendGPSDataUART(gpsData_t* gps) {
 	char buffer[150];
 	sprintf(buffer,
 			"Latitude: %f %c Longitude: %f %c Altitude: %f\r\n"
@@ -163,6 +180,18 @@ void sendGPSData(gpsData_t* gps) {
 			gps->fix);
 
 	sendUARTA1(buffer, strlen(buffer));
+}
+
+void sendGPSDataTrx(gpsData_t* gps) {
+	packet_t packet;
+	packet.gps.fix = gps->fix;
+	packet.gps.speed = gps->speed;
+	packet.gps.status = gps->status;
+	packet.gps.location = gps->location;
+	HAL_LED2_ON();
+	radio_send(packet.bytes, trx_cfg.b_length);
+	radio_wait_for_idle(0);         // 0 = no timeout, just wait
+	HAL_LED2_OFF();
 }
 
 #pragma vector=WDT_VECTOR
