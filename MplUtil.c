@@ -17,6 +17,7 @@
 
 void mplWriteReg(uint8_t address, uint8_t data);
 uint8_t mplReadReg(uint8_t address);
+void mplBurstReadReg(uint8_t address, uint8_t* data, uint8_t dataLen);
 float getPressure(void);
 float getAltitude(void);
 float getTempMPL(void);
@@ -61,15 +62,9 @@ void readMeasurementMPL(measurementMPL_t mm, void* output) {
 	uint8_t status;
 	volatile int counter = 0;
 
-	// Try 100 times in 100 ms
-	while (counter < 100) {
-		counter++;
-		// Read the status register
-		status = mplReadReg(MPL3115A2_STATUS);
-		if (status & 0x08) { // If data is ready
-			break;
-		}
-		__delay_cycles(16000); // Assume 16 MHz clock
+	status = mplReadReg(MPL3115A2_STATUS);
+	if (status & 0x08 == 0) {
+		return;
 	}
 
 	switch (mm) {
@@ -89,14 +84,25 @@ void readMeasurementMPL(measurementMPL_t mm, void* output) {
 		float pressure;
 		float temp;
 		allMPLData_t all;
+		uint8_t buffer[5];
+		mplBurstReadReg(MPL3115A2_OUT_P_MSB, buffer, 5);
 
 		if (mode == PRESSURE_MODE) {
-			pressure = getPressure();
+
+			int32_t whole = ((int32_t)buffer[0] << 10) | ((int32_t)buffer[1] << 2) | (int32_t)buffer[2] >> 6;
+			float fraction = ((buffer[2] & 0x30) >> 4) * Q18_2_FRACTION;
+			pressure = (float)whole + fraction;
 		}
 		else {
-			pressure = getAltitude();
+
+			int16_t whole = ((int16_t)buffer[0] << 8) | (int16_t)buffer[1];
+			float fraction = (buffer[2] >> 4) * Q16_4_FRACTION;
+			pressure = (float)whole + fraction;
 		}
-		temp = getTempMPL();
+
+		int8_t whole = (int8_t)buffer[3];
+		float fraction = (buffer[4] >> 4) * Q8_4_FRACTION;
+		temp = (float)whole + fraction;
 
 		all.pressure = pressure;
 		all.temp = temp;
@@ -218,4 +224,20 @@ uint8_t mplReadReg(uint8_t address) {
 	return rxData[0];
 }
 
+void mplBurstReadReg(uint8_t address, uint8_t* data, uint8_t dataLen) {
+	i2cTransaction_t trans;
+	uint8_t txData[1];
+	txData[0] = address;
+	trans.data = txData;
+	trans.dataLen = 1;
+	trans.repeatedStart = 1;
+	trans.slaveAddress = MPL3115A2_I2C_ADDRESS;
+	trans.channel = MPL3115A2_I2C_CHANNEL;
+	i2cWrite(&trans);
 
+	trans.data = data;
+	trans.dataLen = dataLen;
+	trans.repeatedStart = 1;
+	trans.slaveAddress = MPL3115A2_I2C_ADDRESS;
+	i2cRead(&trans);
+}

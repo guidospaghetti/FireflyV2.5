@@ -11,6 +11,8 @@ uint8_t readRegister(uint8_t regAddress, uint8_t slave);
 
 void writeRegister(uint8_t regAddress, uint8_t data);
 
+void burstReadRegister(uint8_t startRegAddress, uint8_t slave, uint8_t* data, uint8_t dataLen);
+
 /**
  * @fn cvtTemp(int16_t temp)
  * @param temp Raw temperature data
@@ -39,6 +41,7 @@ float getGyroX(void);
 float getGyroY(void);
 float getGyroZ(void);
 float getTempMPU(void);
+void getAllData(allMPUData_t* data);
 
 uint8_t readRegister(uint8_t regAddress, uint8_t slave)
 {
@@ -54,7 +57,7 @@ uint8_t readRegister(uint8_t regAddress, uint8_t slave)
 	i2cWrite(&trans);
 
 	trans.data = rxData;
-	trans.dataLen = 2;
+	trans.dataLen = 5;
 	trans.repeatedStart = 1;
 	i2cRead(&trans);
 
@@ -72,6 +75,23 @@ void writeRegister(uint8_t regAddress, uint8_t data) {
 	trans.slaveAddress = MPU6050_I2C_ADDRESS;
 	trans.channel = MPU6050_I2C_CHANNEL;
 	i2cWrite(&trans);
+}
+
+void burstReadRegister(uint8_t startRegAddress, uint8_t slave, uint8_t* data, uint8_t dataLen) {
+	i2cTransaction_t trans;
+	uint8_t txData[1] = {};
+	txData[0] = startRegAddress;
+	trans.data = txData;
+	trans.dataLen = 1;
+	trans.repeatedStart = 1;
+	trans.slaveAddress = slave;
+	trans.channel = MPU6050_I2C_CHANNEL;
+	i2cWrite(&trans);
+
+	trans.data = data;
+	trans.dataLen = dataLen;
+	trans.repeatedStart = 1;
+	i2cRead(&trans);
 }
 
 void readMeasurementMPU(measurementMPU_t mm, void* data) {
@@ -100,13 +120,7 @@ void readMeasurementMPU(measurementMPU_t mm, void* data) {
     case ALL_MPU:
     {
     	allMPUData_t allData;
-    	allData.accelX = getAccelX();
-    	allData.accelY = getAccelY();
-    	allData.accelZ = getAccelZ();
-    	allData.gyroX = getGyroX();
-    	allData.gyroY = getGyroY();
-    	allData.gyroZ = getGyroZ();
-    	allData.temp = getTempMPU();
+    	getAllData(&allData);
 
     	*(allMPUData_t*)data = allData;
     	return;
@@ -169,6 +183,19 @@ float getTempMPU() {
     buffer[0] = readRegister(MPU6050_RA_TEMP_OUT_H, MPU6050_I2C_ADDRESS);
     buffer[1] = readRegister(MPU6050_RA_TEMP_OUT_L, MPU6050_I2C_ADDRESS);
     return cvtTemp(((int16_t)buffer[0] << 8) | ((int16_t)buffer[1]));
+}
+
+void getAllData(allMPUData_t* data) {
+	uint8_t buffer[14];
+	burstReadRegister(MPU6050_RA_ACCEL_XOUT_H, MPU6050_I2C_ADDRESS, buffer, 14);
+	data->accelX = cvtAccel(((int16_t)buffer[0] << 8) | ((int16_t)buffer[1]));
+	data->accelY = cvtAccel(((int16_t)buffer[2] << 8) | ((int16_t)buffer[3]));
+	data->accelZ = cvtAccel(((int16_t)buffer[4] << 8) | ((int16_t)buffer[5]));
+	data->temp = cvtTemp(((int16_t)buffer[6] << 8) | ((int16_t)buffer[7]));
+	data->gyroX = cvtAccel(((int16_t)buffer[8] << 8) | ((int16_t)buffer[9]));
+	data->gyroY = cvtAccel(((int16_t)buffer[10] << 8) | ((int16_t)buffer[11]));
+	data->gyroZ = cvtAccel(((int16_t)buffer[12] << 8) | ((int16_t)buffer[13]));
+
 }
 
 inline float cvtTemp(int16_t temp) {
