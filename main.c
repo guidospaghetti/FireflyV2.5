@@ -10,11 +10,15 @@
 #include "uart.h"
 #include "string.h"
 #include "stdio.h"
+#include "flight.h"
+#include "retrieval.h"
 
 #define LED_PORT_DIR	P5DIR
 #define LED_PORT_OUT	P5OUT
 #define LED1			BIT0
 #define LED2			BIT1
+
+#define ENTER_LMP0()	__bis_SR_register(CPUOFF + GIE)
 
 trx_cfg_struct trx_cfg;
 extern unsigned long volatile time_counter;
@@ -30,7 +34,14 @@ typedef union packet_t {
 	uint8_t bytes[20];
 } packet_t;
 
+typedef enum payloadMode_t {
+	FLIGHT,
+	RETRIEVAL
+} payloadMode_t;
+
 void msp_setup(void);
+payloadMode_t get_mode(void);
+void sendHelloMessage(void);
 void cc1120Init(void);
 void sendMPUMPL(allMPUData_t* mpu, allMPLData_t* mpl);
 void setClock16MHz(void);
@@ -42,23 +53,25 @@ int main(void) {
 
     msp_setup();
 
-    gpsParams_t params;
-    params.outputFrames = PMTK_RMC | PMTK_GGA;
-    params.updateRate = 1000;
+    payloadMode_t mode = get_mode();
 
-    // Initialize GPS
-    initGPS(&params);
-    allMPUData_t dataMPU;
-    allMPLData_t dataMPL;
-    gpsData_t gps;
+    switch(mode) {
+    case FLIGHT:
+    	run_flight();
+    	break;
+    case RETRIEVAL:
+    default:
+    	run_retrieval();
+    }
 
-    // Initialize MPU6050
-    mpuInit();
+    if (mode == FLIGHT) {
+    	run_flight();
+    }
+    else {
+    	run_retrieval();
+    }
 
-    // Initialize MPL3115A2
-    mplInit(ALTITUDE_MODE);
-
-    cc1120Init();
+    return 0;
 
     while(1) {
     	readMeasurementMPU(ALL_MPU, (void*)&dataMPU);
@@ -115,6 +128,55 @@ void msp_setup(void) {
 
     // Initialize the UART peripheral
     hal_UART_Init();
+}
+
+payloadMode_t get_mode(void) {
+	sendHelloMessage();
+
+	wakeup_on_wdt = 1;
+	wakeupOn1 = 1;
+	while (1) {
+		ENTER_LMP0();
+		if (hal_UART_DataAvailable(1)) {
+			wakeup_on_wdt = 0;
+			wakeupOn1 = 0;
+			if (lastByte1 = 0) {
+				return FLIGHT;
+			}
+			else if (lastByte1 = 1) {
+				return RETRIEVAL;
+			}
+		}
+		else {
+			sendHelloMessage();
+		}
+	}
+}
+
+void sendHelloMessage(void) {
+	char buffer[100];
+	sprintf(buffer, "Select which mode to use. 0 - Flight Mode, 1 - Retrieval Mode");
+	sendUARTA1(buffer, strlen(buffer));
+}
+
+void sensor_setup(void) {
+    gpsParams_t params;
+    params.outputFrames = PMTK_RMC | PMTK_GGA;
+    params.updateRate = 1000;
+
+    // Initialize GPS
+    initGPS(&params);
+    allMPUData_t dataMPU;
+    allMPLData_t dataMPL;
+    gpsData_t gps;
+
+    // Initialize MPU6050
+    mpuInit();
+
+    // Initialize MPL3115A2
+    mplInit(ALTITUDE_MODE);
+
+    cc1120Init();
 }
 
 void cc1120Init(void) {
