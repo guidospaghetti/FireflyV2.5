@@ -3,7 +3,6 @@
 typedef union collection_t {
 	struct gps {
 		location_t location;
-		float speed;
 		uint8_t fix;
 		uint8_t status;
 	} gps;
@@ -19,7 +18,7 @@ typedef union collection_t {
 	} gyro;
 	float altitude;
 	float temp;
-	uint8_t bytes[52];
+	uint8_t bytes[48];
 } collection_t;
 
 typedef struct collectionConfig_t {
@@ -28,3 +27,5 @@ typedef struct collectionConfig_t {
 } collectionConfig_t;
 
 void setup_collection(collectionConfig_t* _config);
+void stop_collection(void);
+void collect(collection_t* data);
