@@ -2,6 +2,8 @@
 #include <msp430.h>
 #include "MpuUtil.h"
 
+mpuConfig_t* config;
+
 /**
  * @param regAddress 8-bit address of the register to read from
  * @param slave 7-bit slave address of the chip
@@ -206,7 +208,7 @@ inline float cvtTemp(int16_t temp) {
 inline float cvtAccel(int16_t accel) {
     // Raw data is the two's complement scaled according
     // to the range selected
-    switch (SCALE) {
+    switch (config->accel) {
     case 0x00:
         return (~accel + 0x01) / (16384.0f);
     case 0x08:
@@ -223,7 +225,7 @@ inline float cvtAccel(int16_t accel) {
 inline float cvtGyro(int16_t gyro) {
     // Raw data is the two's complement scaled according
     // to the range selected
-    switch (SCALE) {
+    switch (config->gyro) {
     case 0x00:
         return (~gyro + 0x01) / (131.0f);
     case 0x08:
@@ -237,10 +239,10 @@ inline float cvtGyro(int16_t gyro) {
     }
 }
 
-void mpuInit() {
+void mpuInit(mpuConfig_t* _config) {
 
     volatile int i;
-
+    config = _config;
     // For some reason, the chip doesn't respond if a register isn't read first
     uint8_t buffer[2];
     buffer[0] = readRegister(MPU6050_RA_PWR_MGMT_1, MPU6050_I2C_ADDRESS);
@@ -254,11 +256,21 @@ void mpuInit() {
     // Clear register reset pin (unsure if this is required)
     writeRegister(MPU6050_RA_PWR_MGMT_1, 0x00);
 
+    if (config->LPM > 0) {
+    	// Set CYCLE = 1, SLEEP = 0, TEMP_DIS = 1
+    	// Required for LPM operation
+    	writeRegister(MPU6050_RA_PWR_MGMT_1, 0x24);
+    	uint8_t lpm = config->LPM - 1;
+    	uint8_t pwm2 = lpm << 6 + 0x07;
+    	// Set STBY_(X,Y,Z)G = 1 and the LP_WAKE_CTRL bits according to user input
+    	writeRegister(MPU6050_RA_PWR_MGMT_2, pwm2);
+    }
+
     // Place the accelerometer in mode defined by the scale
-    writeRegister(MPU6050_RA_ACCEL_CONFIG, SCALE);
+    writeRegister(MPU6050_RA_ACCEL_CONFIG, config->accel);
 
     // Place the gyroscope in mode defined by scale
-    writeRegister(MPU6050_RA_GYRO_CONFIG, SCALE);
+    writeRegister(MPU6050_RA_GYRO_CONFIG, config->gyro);
 
     // First data is always garbage
     allMPUData_t firstData;
