@@ -24,15 +24,6 @@ trx_cfg_struct trx_cfg;
 extern unsigned long volatile time_counter;
 unsigned char wakeup_on_wdt;
 
-typedef union packet_t {
-	struct gps {
-		location_t location;
-		float speed;
-		uint8_t fix;
-		uint8_t status;
-	} gps;
-	uint8_t bytes[20];
-} packet_t;
 
 typedef enum payloadMode_t {
 	FLIGHT,
@@ -64,28 +55,21 @@ int main(void) {
     	run_retrieval();
     }
 
-    if (mode == FLIGHT) {
-    	run_flight();
-    }
-    else {
-    	run_retrieval();
-    }
-
     return 0;
 
-    while(1) {
-    	readMeasurementMPU(ALL_MPU, (void*)&dataMPU);
-    	readMeasurementMPL(ALL_MPL, (void*)&dataMPL);
-    	uint8_t update = checkForUpdate(&gps);
-    	//sendMPUMPL(&dataMPU, &dataMPL);
-    	if (update) {
-    		sendGPSDataUART(&gps);
-    		sendGPSDataTrx(&gps);
-    	}
-    	__no_operation();
-    }
-
-	return (int)dataMPL.temp + (int)dataMPU.temp;
+//    while(1) {
+//    	readMeasurementMPU(ALL_MPU, (void*)&dataMPU);
+//    	readMeasurementMPL(ALL_MPL, (void*)&dataMPL);
+//    	uint8_t update = checkForUpdate(&gps);
+//    	//sendMPUMPL(&dataMPU, &dataMPL);
+//    	if (update) {
+//    		sendGPSDataUART(&gps);
+//    		sendGPSDataTrx(&gps);
+//    	}
+//    	__no_operation();
+//    }
+//
+//	return (int)dataMPL.temp + (int)dataMPU.temp;
 }
 
 void msp_setup(void) {
@@ -128,6 +112,9 @@ void msp_setup(void) {
 
     // Initialize the UART peripheral
     hal_UART_Init();
+
+    // Initialize the transciever
+    cc1120Init();
 }
 
 payloadMode_t get_mode(void) {
@@ -140,10 +127,10 @@ payloadMode_t get_mode(void) {
 		if (hal_UART_DataAvailable(1)) {
 			wakeup_on_wdt = 0;
 			wakeupOn1 = 0;
-			if (lastByte1 = 0) {
+			if (lastByte1 == 0) {
 				return FLIGHT;
 			}
-			else if (lastByte1 = 1) {
+			else if (lastByte1 == 1) {
 				return RETRIEVAL;
 			}
 		}
@@ -157,26 +144,6 @@ void sendHelloMessage(void) {
 	char buffer[100];
 	sprintf(buffer, "Select which mode to use. 0 - Flight Mode, 1 - Retrieval Mode");
 	sendUARTA1(buffer, strlen(buffer));
-}
-
-void sensor_setup(void) {
-    gpsParams_t params;
-    params.outputFrames = PMTK_RMC | PMTK_GGA;
-    params.updateRate = 1000;
-
-    // Initialize GPS
-    initGPS(&params);
-    allMPUData_t dataMPU;
-    allMPLData_t dataMPL;
-    gpsData_t gps;
-
-    // Initialize MPU6050
-    mpuInit();
-
-    // Initialize MPL3115A2
-    mplInit(ALTITUDE_MODE);
-
-    cc1120Init();
 }
 
 void cc1120Init(void) {
@@ -242,18 +209,6 @@ void sendGPSDataUART(gpsData_t* gps) {
 			gps->fix);
 
 	sendUARTA1(buffer, strlen(buffer));
-}
-
-void sendGPSDataTrx(gpsData_t* gps) {
-	packet_t packet;
-	packet.gps.fix = gps->fix;
-	packet.gps.speed = gps->speed;
-	packet.gps.status = gps->status;
-	packet.gps.location = gps->location;
-	HAL_LED2_ON();
-	radio_send(packet.bytes, trx_cfg.b_length);
-	radio_wait_for_idle(0);         // 0 = no timeout, just wait
-	HAL_LED2_OFF();
 }
 
 #pragma vector=WDT_VECTOR
