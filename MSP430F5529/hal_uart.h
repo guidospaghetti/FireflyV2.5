@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 uint8_t lastByte0, lastByte1;
+uint8_t wakeupOn0, wakeupOn1;
 
 void hal_UART_Init(void);
 void hal_UART_TxByte(uint8_t byte, uint8_t channel);

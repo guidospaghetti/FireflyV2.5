@@ -5,7 +5,6 @@
 #include "uart.h"
 
 
-
 typedef enum parserState_t {
 	START,
 	COMMAND,
