@@ -125,12 +125,14 @@ payloadMode_t get_mode(void) {
 	while (1) {
 		ENTER_LMP0();
 		if (hal_UART_DataAvailable(1)) {
-			wakeup_on_wdt = 0;
-			wakeupOn1 = 0;
-			if (lastByte1 == 0) {
+			if (lastByte1 == '0') {
+				wakeup_on_wdt = 0;
+				wakeupOn1 = 0;
 				return FLIGHT;
 			}
-			else if (lastByte1 == 1) {
+			else if (lastByte1 == '1') {
+				wakeup_on_wdt = 0;
+				wakeupOn1 = 0;
 				return RETRIEVAL;
 			}
 		}
@@ -141,8 +143,7 @@ payloadMode_t get_mode(void) {
 }
 
 void sendHelloMessage(void) {
-	char buffer[100];
-	sprintf(buffer, "Select which mode to use. 0 - Flight Mode, 1 - Retrieval Mode");
+	char* buffer = "\rSelect which mode to use. 0 - Flight Mode, 1 - Retrieval Mode: ";
 	sendUARTA1(buffer, strlen(buffer));
 }
 
