@@ -2,9 +2,11 @@
 #include "MpuUtil.h"
 #include "MplUtil.h"
 #include "MTK3339.h"
-#include "hal_uart.h"
+#include "uart.h"
 #include "collection.h"
 #include "transmission.h"
+#include <stdio.h>
+#include <string.h>
 
 #define ACCEL_HIST_SIZE	15
 #define ALT_HIST_SIZE	15

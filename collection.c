@@ -3,6 +3,7 @@
 #include "MTK3339.h"
 #include "MpuUtil.h"
 #include "MplUtil.h"
+#include "uart.h"
 #include "stdint.h"
 
 #define ACLK	32768
