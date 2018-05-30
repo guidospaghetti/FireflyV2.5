@@ -13,6 +13,13 @@ typedef enum parserState_t {
 	END
 } parserState_t;
 
+typedef enum rxState_t {
+	WAITING,
+	RECEIVING
+} rxState_t;
+
+uint8_t responseAvailable = 0;
+char bufferStart[150] = {};
 typedef char fieldBuffer[PMTK_COMMAND_MAX_FIELD_LENGTH];
 
 void parseResponse(char* response, gpsData_t* gps);
@@ -20,11 +27,14 @@ void sendGPSMessage(char* message);
 uint8_t genChecksum(char* message);
 
 void initGPS(gpsParams_t* params) {
+
+	addRxHandler(&gpsRxHandler, 0);
+
 	char message[50];
 	sprintf(message, PMTK_SET_NMEA_UPDATERATE ",%d", params->updateRate);
 	sendGPSMessage(message);
 
-	sprintf(message, PMTK_API_SET_NMEA_OUTPUT ",0,%d,%d,%d,%d,%d,0,0,0,0,0,0,0,0",
+	sprintf(message, PMTK_API_SET_NMEA_OUTPUT ",0,%d,%d,%d,%d,%d,0,0,0,0,0,0,0,0,0,0,0,0,0,0",
 			(params->outputFrames & PMTK_RMC) >> 0,
 			(params->outputFrames & PMTK_VTG) >> 1,
 			(params->outputFrames & PMTK_GGA) >> 2,
@@ -63,36 +73,59 @@ uint8_t genChecksum(char* message) {
 
 uint8_t checkForUpdate(gpsData_t* gps) {
 	// Check if a message is coming from the GPS
-	if (lastByte0 == '$') {
-		// Initialize a buffer
-		char bufferStart[150] = {};
-		char* buffer = bufferStart;
-		*buffer = '$';
-		//buffer++;
-		while(hal_UART_DataAvailable(0) == 0);//wait
-		volatile uint8_t counter = 1;
-		// The GPS messages end with a new line character
-		// so loop until that happens
-		while (*buffer != '\n') {
-			if (counter > 150) {
-				break;
-			}
-			// Wait for the next byte
-			while(hal_UART_DataAvailable(0) == 0);//wait, moved from line 65
-			// Increment the buffer
-			buffer++;
-			// Add the new character to the buffer
-			*buffer = lastByte0;
-
-			counter++;
-		}
-
+	if (responseAvailable) {
+//		// Initialize a buffer
+//		char* buffer = bufferStart;
+//		*buffer = '$';
+//		//buffer++;
+//		while(hal_UART_DataAvailable(0) == 0);//wait
+//		volatile uint8_t counter = 1;
+//		// The GPS messages end with a new line character
+//		// so loop until that happens
+//		while (*buffer != '\n') {
+//			if (counter > 150) {
+//				break;
+//			}
+//			// Wait for the next byte
+//			while(hal_UART_DataAvailable(0) == 0);//wait, moved from line 65
+//			// Increment the buffer
+//			buffer++;
+//			// Add the new character to the buffer
+//			*buffer = lastByte0;
+//
+//			counter++;
+//		}
+		responseAvailable = 0;
 		// Parse the respone from the GPS
 		parseResponse(bufferStart, gps);
 		return 1;
 	}
 	else {
 		return 0;
+	}
+}
+
+void gpsRxHandler(uint8_t byte) {
+	static char* buffer = bufferStart;
+	static rxState_t state = WAITING;
+
+	if (byte == '$') {
+		buffer = bufferStart;
+		*buffer = byte;
+		state = RECEIVING;
+	}
+	if (state == RECEIVING) {
+		if (byte == '\n') {
+			*buffer = byte;
+			buffer = bufferStart;
+			responseAvailable = 1;
+			state = WAITING;
+		}
+		else {
+			*buffer = byte;
+			buffer++;
+			state = RECEIVING;
+		}
 	}
 }
 

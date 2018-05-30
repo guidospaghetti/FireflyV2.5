@@ -202,5 +202,5 @@ typedef struct gpsParams_t {
 
 void initGPS(gpsParams_t* params);
 uint8_t checkForUpdate(gpsData_t* gps);
-
+void gpsRxHandler(uint8_t byte);
 #endif /* MTK3339_H_ */
