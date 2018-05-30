@@ -8,15 +8,17 @@
 #define ACLK	32768
 uint32_t timer_ticks = 0;
 gpsData_t lastGPS;
+collectionConfig_t* config;
 
 void setup_collection(collectionConfig_t* _config) {
-    gpsParams_t params;
+    config = _config;
+	gpsParams_t params;
     params.outputFrames = PMTK_RMC | PMTK_GGA;
-	if (_config->lpm > 0) {
+	if (config->lpm > 0) {
 		params.updateRate = 1000;
 	}
 	else {
-		params.updateRate = (_config->rate > 100) ? _config->rate : 100;
+		params.updateRate = (config->rate > 100) ? config->rate : 100;
 	}
 
     // Initialize GPS
@@ -24,7 +26,7 @@ void setup_collection(collectionConfig_t* _config) {
 
     // Initialize MPU6050, first in low power mode
     mpuConfig_t mpuConfig;
-    mpuConfig.LPM = _config->lpm;
+    mpuConfig.LPM = config->lpm;
     mpuConfig.accel = 3;
     mpuConfig.gyro = 2;
     mpuInit(&mpuConfig);
@@ -33,14 +35,14 @@ void setup_collection(collectionConfig_t* _config) {
     mplInit(ALTITUDE_MODE);
 
     // Setup timer
-    TA1CCR0 = ACLK/_config->rate;
+    TA1CCR0 = ACLK/config->rate;
     TA1CTL = TASSEL__ACLK + MC__UP + TACLR + ID__1 + TAIE;
 }
 
 void stop_collection(void) {
 	TA1CTL = 0;
 	TA1CCR0 = 0;
-	TA1CCTL0 = 0;
+	TA1CCTL1 = 0;
 	timer_ticks = 0;
 }
 
@@ -49,6 +51,7 @@ void collect(collection_t* data) {
 	allMPUData_t dataMPU;
 	allMPLData_t dataMPL;
 	gpsData_t gps;
+	TA1CCTL1 = CCIE;
 	// Enter LPM
 	__bis_SR_register(CPUOFF + GIE);
 	readMeasurementMPU(ALL_MPU, (void*)&dataMPU);
@@ -57,17 +60,20 @@ void collect(collection_t* data) {
 	if (update) {
 		lastGPS = gps;
 	}
-	data->accel.x = dataMPU.accelX;
-	data->accel.y = dataMPU.accelY;
-	data->accel.z = dataMPU.accelZ;
-	data->gyro.x = dataMPU.gyroX;
-	data->gyro.y = dataMPU.gyroY;
-	data->gyro.z = dataMPU.gyroZ;
-	data->altitude = dataMPL.pressure;
-	data->temp = dataMPL.temp;
-	data->gps.location = lastGPS.location;
-	data->gps.fix = lastGPS.fix;
-	data->gps.status = lastGPS.status;
+	data->data.accel.x = dataMPU.accelX;
+	data->data.accel.y = dataMPU.accelY;
+	data->data.accel.z = dataMPU.accelZ;
+	if (config->lpm == 0) {
+		data->data.gyro.x = dataMPU.gyroX;
+		data->data.gyro.y = dataMPU.gyroY;
+		data->data.gyro.z = dataMPU.gyroZ;
+	}
+	data->data.altitude = dataMPL.pressure;
+	data->data.temp = dataMPL.temp;
+	data->data.gps.location = lastGPS.location;
+	data->data.gps.fix = lastGPS.fix;
+	data->data.gps.status = lastGPS.status;
+	__no_operation();
 }
 
 #pragma vector=TIMER1_A1_VECTOR

@@ -1,23 +1,25 @@
 #include "MTK3339.h"
 #include "stdint.h"
 typedef union collection_t {
-	struct gps {
-		location_t location;
-		uint8_t fix;
-		uint8_t status;
-	} gps;
-	struct accel {
-		float x;
-		float y;
-		float z;
-	} accel;
-	struct gyro {
-		float x;
-		float y;
-		float z;
-	} gyro;
-	float altitude;
-	float temp;
+	struct data {
+		struct gps {
+			location_t location;
+			uint8_t fix;
+			uint8_t status;
+		} gps;
+		struct accel {
+			float x;
+			float y;
+			float z;
+		} accel;
+		struct gyro {
+			float x;
+			float y;
+			float z;
+		} gyro;
+		float altitude;
+		float temp;
+	} data;
 	uint8_t bytes[48];
 } collection_t;
 
