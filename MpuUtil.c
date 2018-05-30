@@ -209,13 +209,13 @@ inline float cvtAccel(int16_t accel) {
     // Raw data is the two's complement scaled according
     // to the range selected
     switch (config->accel) {
-    case 0x00:
+    case 0:
         return (~accel + 0x01) / (16384.0f);
-    case 0x08:
+    case 1:
         return (~accel + 0x01) / (8192.0f);
-    case 0x10:
+    case 2:
         return (~accel + 0x01) / (4096.0f);
-    case 0x18:
+    case 3:
         return (~accel + 0x01) / (2048.0f);
     default:
         return 0;
@@ -226,13 +226,13 @@ inline float cvtGyro(int16_t gyro) {
     // Raw data is the two's complement scaled according
     // to the range selected
     switch (config->gyro) {
-    case 0x00:
+    case 0:
         return (~gyro + 0x01) / (131.0f);
-    case 0x08:
+    case 1:
         return (~gyro + 0x01) / (65.5f);
-    case 0x10:
+    case 2:
         return (~gyro + 0x01) / (32.8f);
-    case 0x18:
+    case 3:
         return (~gyro + 0x01) / (16.4f);
     default:
         return 0;
@@ -243,9 +243,6 @@ void mpuInit(mpuConfig_t* _config) {
 
     volatile int i;
     config = _config;
-    // For some reason, the chip doesn't respond if a register isn't read first
-    uint8_t buffer[2];
-    buffer[0] = readRegister(MPU6050_RA_PWR_MGMT_1, MPU6050_I2C_ADDRESS);
 
     // Set register to 0x80, resets all register values
     writeRegister(MPU6050_RA_PWR_MGMT_1, 0x80);
@@ -254,23 +251,24 @@ void mpuInit(mpuConfig_t* _config) {
     __delay_cycles(50000);
 
     // Clear register reset pin (unsure if this is required)
-    writeRegister(MPU6050_RA_PWR_MGMT_1, 0x00);
+    //writeRegister(MPU6050_RA_PWR_MGMT_1, 0x00);
 
     if (config->LPM > 0) {
     	// Set CYCLE = 1, SLEEP = 0, TEMP_DIS = 1
     	// Required for LPM operation
-    	writeRegister(MPU6050_RA_PWR_MGMT_1, 0x24);
+    	writeRegister(MPU6050_RA_PWR_MGMT_1, 0x28);
     	uint8_t lpm = config->LPM - 1;
-    	uint8_t pwm2 = lpm << 6 + 0x07;
+    	uint8_t pwm2 = lpm << 6;
+    	pwm2 += 0x07;
     	// Set STBY_(X,Y,Z)G = 1 and the LP_WAKE_CTRL bits according to user input
     	writeRegister(MPU6050_RA_PWR_MGMT_2, pwm2);
     }
 
     // Place the accelerometer in mode defined by the scale
-    writeRegister(MPU6050_RA_ACCEL_CONFIG, config->accel);
+    writeRegister(MPU6050_RA_ACCEL_CONFIG, config->accel << 3);
 
     // Place the gyroscope in mode defined by scale
-    writeRegister(MPU6050_RA_GYRO_CONFIG, config->gyro);
+    writeRegister(MPU6050_RA_GYRO_CONFIG, config->gyro << 3);
 
     // First data is always garbage
     allMPUData_t firstData;
