@@ -111,6 +111,7 @@ __interrupt void UART_A0(void) {
 		lastByte0 = UCA0RXBUF;
 		UCA0IFG &= ~UCRXIFG;
 		dataAvailable0 = 1;
+		UARTA0_handler(lastByte0);
 		if (wakeupOn0) {
 			_BIC_SR_IRQ(LPM3_bits);
 		}
@@ -132,6 +133,7 @@ __interrupt void UART_A1(void) {
 		lastByte1 = UCA1RXBUF;
 		UCA1IFG &= ~UCRXIFG;
 		dataAvailable1 = 1;
+		UARTA1_handler(lastByte1);
 		if (wakeupOn1) {
 			_BIC_SR_IRQ(LPM3_bits);
 		}
