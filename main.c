@@ -12,11 +12,7 @@
 #include "stdio.h"
 #include "flight.h"
 #include "retrieval.h"
-
-#define LED_PORT_DIR	P5DIR
-#define LED_PORT_OUT	P5OUT
-#define LED1			BIT0
-#define LED2			BIT1
+#include "LED.h"
 
 #define ENTER_LMP0()	__bis_SR_register(CPUOFF + GIE)
 
@@ -74,9 +70,8 @@ int main(void) {
 
 void msp_setup(void) {
 
-    LED_PORT_DIR |= LED1 + LED2;
-    LED_PORT_OUT &= ~LED1;
-    LED_PORT_OUT |= LED2;
+	INIT_LEDS();
+	RED_ON();
 
 	setClock16MHz();
 
