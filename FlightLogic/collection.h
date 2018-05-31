@@ -1,5 +1,9 @@
 #include "MTK3339.h"
 #include "stdint.h"
+
+#ifndef COLLECTION_H
+#define COLLECTION_H
+
 typedef union collection_t {
 	struct data {
 		struct gps {
@@ -32,3 +36,5 @@ typedef struct collectionConfig_t {
 void setup_collection(collectionConfig_t* _config);
 void stop_collection(void);
 void collect(collection_t* data);
+
+#endif
