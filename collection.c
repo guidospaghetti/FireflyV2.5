@@ -11,17 +11,17 @@
 
 uint32_t timer_ticks = 0;
 gpsData_t lastGPS;
-collectionConfig_t* config;
+collectionConfig_t config;
 
 void setup_collection(collectionConfig_t* _config) {
-    config = _config;
+    config = *_config;
 	gpsParams_t params;
     params.outputFrames = PMTK_RMC | PMTK_GGA;
-	if (config->lpm > 0) {
+	if (config.lpm > 0) {
 		params.updateRate = 1000;
 	}
 	else {
-		params.updateRate = (config->rate > 100) ? config->rate : 100;
+		params.updateRate = (config.rate > 100) ? config.rate : 100;
 	}
 
     // Initialize GPS
@@ -29,8 +29,8 @@ void setup_collection(collectionConfig_t* _config) {
 
     // Initialize MPU6050, first in low power mode
     mpuConfig_t mpuConfig;
-    mpuConfig.LPM = config->lpm;
-    mpuConfig.accel = 0;
+    mpuConfig.LPM = config.lpm;
+    mpuConfig.accel = 3;
     mpuConfig.gyro = 2;
     mpuInit(&mpuConfig);
 
@@ -38,7 +38,8 @@ void setup_collection(collectionConfig_t* _config) {
     mplInit(ALTITUDE_MODE);
 
     // Setup timer
-    TA1CCR0 = (uint16_t)((float)(SMCLK >> 4) / (float)config->rate);
+    uint16_t value = (uint16_t)((float)(SMCLK >> 3) / (float)_config->rate);
+    TA1CCR0 = value;
     TA1CTL = TASSEL__SMCLK + MC__UP + TACLR + ID__8 + TAIE;
 }
 
@@ -66,13 +67,16 @@ void collect(collection_t* data) {
 	data->data.accel.x = dataMPU.accelX;
 	data->data.accel.y = dataMPU.accelY;
 	data->data.accel.z = dataMPU.accelZ;
-	if (config->lpm == 0) {
+	if (config.lpm == 0) {
 		data->data.gyro.x = dataMPU.gyroX;
 		data->data.gyro.y = dataMPU.gyroY;
 		data->data.gyro.z = dataMPU.gyroZ;
+		data->data.temp = dataMPL.temp;
+	}
+	else {
+		data->data.temp = dataMPU.temp;
 	}
 	data->data.altitude = dataMPL.pressure;
-	data->data.temp = dataMPL.temp;
 	data->data.gps.time = lastGPS.time;
 	data->data.gps.location = lastGPS.location;
 	data->data.gps.fix = lastGPS.fix;
