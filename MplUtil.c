@@ -41,7 +41,7 @@ void mplInit(modeMPL_t mode_) {
 }
 
 void altitudeMode(void) {
-	// Write 1 0 111 0 0 0, Put in altitude mode, No RAW data, Oversampling rate of 128, reset disabled, do not use one shot, put in standby mode
+	// Write 1 0 111 0 0 0, Put in altitude mode, No RAW data, Oversampling ratio of 128, reset disabled, do not use one shot, put in standby mode
 	mplWriteReg(MPL3115A2_CTRL_REG1, 0xB8);
 	// Write 00000 1 1 1, Reserved, Enable data ready flag, pressure/altitude data ready flag, and temperature data ready flag
 	mplWriteReg(MPL3115A2_PT_DATA_CFG, 0x07);
