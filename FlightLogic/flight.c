@@ -43,16 +43,7 @@ void wait_for_launch() {
 		//sendString(1, "%.3f\t%.3f\t%.3f\r\n", data.data.altitude, data.data.temp, data.data.accel.z);
 		// Assume the payload will be placed flat, GPS down
 		// Z axis will be facing upwards, towards the sky
-		*accelPos = data.data.accel.z;
-		*altPos = data.data.altitude;
-		accelPos++;
-		altPos++;
-		if (accelPos == accelEnd) {
-			accelPos = accelHist;
-		}
-		if (altPos == altEnd) {
-			altPos = altHist;
-		}
+		flightState_t flightState = update(&data);
 	}
 }
 
