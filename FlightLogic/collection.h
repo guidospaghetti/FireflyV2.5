@@ -30,7 +30,7 @@ typedef union collection_t {
 
 typedef struct collectionConfig_t {
 	uint8_t lpm;	/**< Low power mode configuration, see MpuUtil.h*/
-	uint8_t rate;	/**< Sampling rate in ms for each measurement, if lpm > 0 then GPS will be polled at 1 Hz*/
+	uint16_t rate;	/**< Sampling rate in ms for each measurement, if lpm > 0 then GPS will be polled at 1 Hz*/
 } collectionConfig_t;
 
 void setup_collection(collectionConfig_t* _config);
