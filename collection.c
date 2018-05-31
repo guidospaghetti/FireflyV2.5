@@ -7,6 +7,8 @@
 #include "stdint.h"
 
 #define ACLK	32768
+#define SMCLK	16000000
+
 uint32_t timer_ticks = 0;
 gpsData_t lastGPS;
 collectionConfig_t* config;
@@ -28,7 +30,7 @@ void setup_collection(collectionConfig_t* _config) {
     // Initialize MPU6050, first in low power mode
     mpuConfig_t mpuConfig;
     mpuConfig.LPM = config->lpm;
-    mpuConfig.accel = 3;
+    mpuConfig.accel = 0;
     mpuConfig.gyro = 2;
     mpuInit(&mpuConfig);
 
@@ -36,8 +38,8 @@ void setup_collection(collectionConfig_t* _config) {
     mplInit(ALTITUDE_MODE);
 
     // Setup timer
-    TA1CCR0 = ACLK/config->rate;
-    TA1CTL = TASSEL__ACLK + MC__UP + TACLR + ID__1 + TAIE;
+    TA1CCR0 = (uint16_t)((float)(SMCLK >> 4) / (float)config->rate);
+    TA1CTL = TASSEL__SMCLK + MC__UP + TACLR + ID__8 + TAIE;
 }
 
 void stop_collection(void) {
@@ -71,6 +73,7 @@ void collect(collection_t* data) {
 	}
 	data->data.altitude = dataMPL.pressure;
 	data->data.temp = dataMPL.temp;
+	data->data.gps.time = lastGPS.time;
 	data->data.gps.location = lastGPS.location;
 	data->data.gps.fix = lastGPS.fix;
 	data->data.gps.status = lastGPS.status;

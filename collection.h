@@ -3,6 +3,7 @@
 typedef union collection_t {
 	struct data {
 		struct gps {
+			time_t time;
 			location_t location;
 			uint8_t fix;
 			uint8_t status;
@@ -20,7 +21,7 @@ typedef union collection_t {
 		float altitude;
 		float temp;
 	} data;
-	uint8_t bytes[48];
+	uint8_t bytes[55];
 } collection_t;
 
 typedef struct collectionConfig_t {
