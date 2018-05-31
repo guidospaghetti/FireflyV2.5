@@ -34,8 +34,8 @@ void wait_for_launch() {
 	// Get data at 40 Hz
 	config.rate = 40;
 	setup_collection(&config);
+	initDataStorage();
 	collection_t data;
-	uint8_t count = 0;
 	while (1) {
 		collect(&data);
 		SWITCH_RED();
@@ -44,17 +44,56 @@ void wait_for_launch() {
 		// Assume the payload will be placed flat, GPS down
 		// Z axis will be facing upwards, towards the sky
 		flightState_t flightState = update(&data);
+		if (flightState == UPWARDS) {
+			break;
+		}
 	}
 }
 
 void upwards(void) {
-
+	collectionConfig_t config;
+	config.lpm = 0;
+	config.rate = 40;
+	setup_collection(&config);
+	collection_t data;
+	while (1) {
+		collect(&data);
+		SWITCH_GREEN();
+		flightState_t flightState = update(&data);
+		if (flightState == DOWNWARDS) {
+			break;
+		}
+	}
 }
 
 void downwards(void) {
-
+	collectionConfig_t config;
+	config.lpm = 4;
+	config.rate = 2000;
+	setup_collection(&config);
+	collection_t data;
+	while (1) {
+		collect(&data);
+		SWITCH_GREEN();
+		flightState_t flightState = update(&data);
+		if (flightState == DOWNWARDS) {
+			break;
+		}
+	}
 }
 
 void landed(void) {
-
+	collectionConfig_t config;
+	config.lpm = 1;
+	config.rate = 5000;
+	setup_collection(&config);
+	collection_t data;
+	while (1) {
+		collect(&data);
+		SWITCH_GREEN();
+		flightState_t flightState = update(&data);
+		if (flightState == DOWNWARDS) {
+			break;
+		}
+	}
 }

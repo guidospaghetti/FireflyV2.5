@@ -6,6 +6,7 @@
 #define AVERAGE_ALT_SIZE	ALT_HIST_SIZE - 2
 #define ROLLING_AVERAGE_LEN	3
 #define ACCEL_THRESHOLD		8.0f
+#define ALT_DIFF_THRESHOLD	25
 
 float accelHist[ACCEL_HIST_SIZE];
 float altHist[ALT_HIST_SIZE];
@@ -20,16 +21,15 @@ float* accelEnd = accelHist;
 float* altEnd = altHist;
 
 float* avgAccelPos = averageAccel;
-float* curAvgAccel;
+float* curAvgAccel = averageAccel;
 float* avgAltPos = averageAlt;
-float* curAvgAlt;
+float* curAvgAlt = averageAlt;
 float* avgAccelEnd = averageAccel;
 float* avgAltEnd = averageAlt;
 
 uint64_t measCount = 1;
-uint8_t accelFull = 0;
-uint8_t altFull = 0;
-flightState_t state = ON_PAD;
+float maxAltitude = -1000.0f;
+float prevAlt = 0.0f;
 
 void updateStorage(collection_t* data);
 void incPosRaw(void);
@@ -44,28 +44,45 @@ void initDataStorage(void) {
 
 flightState_t update(collection_t* data) {
 	updateStorage(data);
-	flightState_t ret = ON_PAD;
+	static flightState_t state = ON_PAD;
+	static uint8_t zeroCount = 0;
+
 	switch (state) {
 	case ON_PAD:
 		if (*curAvgAccel > ACCEL_THRESHOLD) {
-			ret = UPWARDS;
+			state = UPWARDS;
 		}
 		else {
-			ret = ON_PAD;
+			state = ON_PAD;
 		}
 		break;
 	case UPWARDS:
-
+		if (maxAltitude - ALT_DIFF_THRESHOLD > *curAvgAccel) {
+			state = DOWNWARDS;
+		}
+		else {
+			state = UPWARDS;
+		}
 		break;
 	case DOWNWARDS:
+		if (*curAvgAlt - prevAlt < 1 || *curAvgAlt - prevAlt > -1) {
+			zeroCount++;
+		}
+		if (zeroCount > 100) {
+			state = LANDED;
+		}
+		else {
+			state = DOWNWARDS;
+		}
 		break;
 	case LANDED:
+		state = LANDED;
 		break;
 	default:
 		break;
 	}
 
-	return ret;
+	return state;
 }
 
 void updateStorage(collection_t* data) {
@@ -81,6 +98,11 @@ void updateStorage(collection_t* data) {
 		}
 		*avgAccelPos = sumAccel / (float)ROLLING_AVERAGE_LEN;
 		*avgAltPos = sumAlt / (float)ROLLING_AVERAGE_LEN;
+
+		if (*avgAltPos > maxAltitude) {
+			maxAltitude = *avgAltPos;
+		}
+
 		incPosAvg();
 	}
 	else {
@@ -95,17 +117,16 @@ void incPosRaw(void) {
 	accelPos++;
 	altPos++;
 	if (accelPos == accelEnd) {
-		accelFull = 1;
 		accelPos = accelHist;
 	}
 	if (altPos == altEnd) {
-		altFull = 1;
 		altPos = altHist;
 	}
 }
 
 void incPosAvg(void) {
 	curAvgAccel = avgAccelPos;
+	prevAlt = *curAvgAlt;
 	curAvgAlt = avgAltPos;
 	avgAccelPos++;
 	avgAltPos++;
