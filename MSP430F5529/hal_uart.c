@@ -6,6 +6,7 @@
  */
 
 #include "hal_uart.h"
+#include "uart.h"
 #include "msp430f5529.h"
 
 uint8_t dataAvailable0, dataAvailable1;
