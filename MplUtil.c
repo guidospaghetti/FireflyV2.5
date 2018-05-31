@@ -153,7 +153,6 @@ float getTempMPL(void) {
 	return (float)whole + fraction;
 }
 
-
 void setModeStandby(void)
 {
 	mplWriteReg(MPL3115A2_CTRL_REG1, 0x00);

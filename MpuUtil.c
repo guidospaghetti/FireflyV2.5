@@ -2,7 +2,7 @@
 #include <msp430.h>
 #include "MpuUtil.h"
 
-mpuConfig_t* config;
+mpuConfig_t config;
 
 /**
  * @param regAddress 8-bit address of the register to read from
@@ -208,7 +208,7 @@ inline float cvtTemp(int16_t temp) {
 inline float cvtAccel(int16_t accel) {
     // Raw data is the two's complement scaled according
     // to the range selected
-    switch (config->accel) {
+    switch (config.accel) {
     case 0:
         return (~accel + 0x01) / (16384.0f);
     case 1:
@@ -225,7 +225,7 @@ inline float cvtAccel(int16_t accel) {
 inline float cvtGyro(int16_t gyro) {
     // Raw data is the two's complement scaled according
     // to the range selected
-    switch (config->gyro) {
+    switch (config.gyro) {
     case 0:
         return (~gyro + 0x01) / (131.0f);
     case 1:
@@ -242,7 +242,7 @@ inline float cvtGyro(int16_t gyro) {
 void mpuInit(mpuConfig_t* _config) {
 
     volatile int i;
-    config = _config;
+    config = *_config;
 
     // Set register to 0x80, resets all register values
     writeRegister(MPU6050_RA_PWR_MGMT_1, 0x80);
@@ -253,11 +253,11 @@ void mpuInit(mpuConfig_t* _config) {
     // Clear register reset pin (unsure if this is required)
     //writeRegister(MPU6050_RA_PWR_MGMT_1, 0x00);
 
-    if (config->LPM > 0) {
+    if (config.LPM > 0) {
     	// Set CYCLE = 1, SLEEP = 0, TEMP_DIS = 1
     	// Required for LPM operation
     	writeRegister(MPU6050_RA_PWR_MGMT_1, 0x28);
-    	uint8_t lpm = config->LPM - 1;
+    	uint8_t lpm = config.LPM - 1;
     	uint8_t pwm2 = lpm << 6;
     	pwm2 += 0x07;
     	// Set STBY_(X,Y,Z)G = 1 and the LP_WAKE_CTRL bits according to user input
@@ -265,10 +265,10 @@ void mpuInit(mpuConfig_t* _config) {
     }
 
     // Place the accelerometer in mode defined by the scale
-    writeRegister(MPU6050_RA_ACCEL_CONFIG, config->accel << 3);
+    writeRegister(MPU6050_RA_ACCEL_CONFIG, config.accel << 3);
 
     // Place the gyroscope in mode defined by scale
-    writeRegister(MPU6050_RA_GYRO_CONFIG, config->gyro << 3);
+    writeRegister(MPU6050_RA_GYRO_CONFIG, config.gyro << 3);
 
     // First data is always garbage
     allMPUData_t firstData;
