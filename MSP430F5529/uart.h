@@ -12,6 +12,7 @@
 
 void sendUARTA0(char* bytes, uint32_t length);
 void sendUARTA1(char* bytes, uint32_t length);
+void sendString(uint8_t channel, char* bytes, ...);
 void addRxHandler(void (*handler)(uint8_t), uint8_t channel);
 void UARTA0_handler(uint8_t byte);
 void UARTA1_handler(uint8_t byte);

@@ -6,7 +6,9 @@
  */
 
 #include <stdint.h>
-#include "hal_uart.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include "uart.h"
 
 #define HANDLER_ARRAY_SIZE	5
 
@@ -35,6 +37,24 @@ void sendUARTA1(char* bytes, uint32_t length) {
 		bytes++;
 	}
 	__enable_interrupt();
+}
+
+void sendString(uint8_t channel, char* bytes, ...) {
+	va_list va;
+	va_start(va, bytes);
+	char buffer[256];
+	uint8_t len = vsprintf(buffer, bytes, va);
+
+	switch (channel) {
+	case 0:
+		sendUARTA0(buffer, len);
+		break;
+	case 1:
+		sendUARTA1(buffer, len);
+		break;
+	default:
+		break;
+	}
 }
 
 void addRxHandler(void (*handler)(uint8_t), uint8_t channel) {
