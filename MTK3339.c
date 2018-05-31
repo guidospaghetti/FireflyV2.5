@@ -44,11 +44,11 @@ void initGPS(gpsParams_t* params) {
 }
 
 void sendGPSMessage(char* message) {
-	char checksumBytes[3];
+	char checksumBytes[2];
 	uint32_t length = strlen(message);
 	char buffer[150] = {};
 	uint8_t checksum = genChecksum(message);
-	sprintf(checksumBytes, "%d", checksum);
+	sprintf(checksumBytes, "%X", checksum);
 
 	// Create the message that will be sent to the GPS
 	buffer[0] = '$';
@@ -109,7 +109,7 @@ void gpsRxHandler(uint8_t byte) {
 	static char* buffer = bufferStart;
 	static rxState_t state = WAITING;
 
-	if (byte == '$') {
+	if (state == WAITING && byte == '$') {
 		buffer = bufferStart;
 		*buffer = byte;
 		state = RECEIVING;
