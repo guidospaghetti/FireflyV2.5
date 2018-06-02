@@ -14,7 +14,16 @@ gpsData_t lastGPS;
 collectionConfig_t config;
 
 void setup_collection(collectionConfig_t* _config) {
-    config = *_config;
+    static uint8_t setup = 0;
+    uint8_t mpuStartup = 1;
+
+    if (setup == 1) {
+    	if (config.lpm == _config->lpm) {
+    		mpuStartup = 0;
+    	}
+    }
+
+	config = *_config;
 	gpsParams_t params;
     params.outputFrames = PMTK_RMC | PMTK_GGA;
 	if (config.lpm > 0) {
@@ -27,20 +36,25 @@ void setup_collection(collectionConfig_t* _config) {
     // Initialize GPS
     initGPS(&params);
 
-    // Initialize MPU6050, first in low power mode
-    mpuConfig_t mpuConfig;
-    mpuConfig.LPM = config.lpm;
-    mpuConfig.accel = 3;
-    mpuConfig.gyro = 2;
-    mpuInit(&mpuConfig);
+    if (mpuStartup == 1) {
+		// Initialize MPU6050, first in low power mode
+		mpuConfig_t mpuConfig;
+		mpuConfig.LPM = config.lpm;
+		mpuConfig.accel = 3;
+		mpuConfig.gyro = 2;
+		mpuInit(&mpuConfig);
+    }
 
-    // Initialize MPL3115A2
-    mplInit(ALTITUDE_MODE);
-
+    if (setup == 0) {
+		// Initialize MPL3115A2
+		mplInit(ALTITUDE_MODE);
+    }
     // Setup timer
     uint16_t value = (uint16_t)((float)(SMCLK >> 3) / (float)_config->rate);
     TA1CCR0 = value;
     TA1CTL = TASSEL__SMCLK + MC__UP + TACLR + ID__8 + TAIE;
+
+    setup = 1;
 }
 
 void stop_collection(void) {
