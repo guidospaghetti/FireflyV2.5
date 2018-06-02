@@ -250,8 +250,8 @@ void mpuInit(mpuConfig_t* _config) {
     // Delay to ensure correct data
     __delay_cycles(50000);
 
-    // Clear register reset pin (unsure if this is required)
-    //writeRegister(MPU6050_RA_PWR_MGMT_1, 0x00);
+    // Reset the signal paths for all sensors
+    writeRegister(MPU6050_RA_SIGNAL_PATH_RESET, 0x07);
 
     if (config.LPM > 0) {
     	// Set CYCLE = 1, SLEEP = 0, TEMP_DIS = 1
