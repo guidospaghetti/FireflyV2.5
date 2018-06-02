@@ -1,10 +1,12 @@
 #include <msp430f5529.h>
+#include <stdint.h>
+#include "storage.h"
 #include "collection.h"
 #include "MTK3339.h"
 #include "MpuUtil.h"
 #include "MplUtil.h"
 #include "uart.h"
-#include "stdint.h"
+
 
 #define ACLK	32768
 #define SMCLK	16000000
@@ -30,7 +32,7 @@ void setup_collection(collectionConfig_t* _config) {
 		params.updateRate = 1000;
 	}
 	else {
-		params.updateRate = (config.rate > 100) ? config.rate : 100;
+		params.updateRate = (config.sampleRate > 100) ? config.sampleRate : 100;
 	}
 
     // Initialize GPS
@@ -50,7 +52,7 @@ void setup_collection(collectionConfig_t* _config) {
 		mplInit(ALTITUDE_MODE);
     }
     // Setup timer
-    uint16_t value = (uint16_t)((float)(SMCLK >> 3) / (float)_config->rate);
+    uint16_t value = (uint16_t)((float)(SMCLK >> 3) / (float)_config->sampleRate);
     TA1CCR0 = value;
     TA1CTL = TASSEL__SMCLK + MC__UP + TACLR + ID__8 + TAIE;
 
@@ -65,6 +67,7 @@ void stop_collection(void) {
 }
 
 void collect(collection_t* data) {
+	static uint8_t started = 0;
 
 	allMPUData_t dataMPU;
 	allMPLData_t dataMPL;
@@ -73,7 +76,13 @@ void collect(collection_t* data) {
 	// Enter LPM
 	__bis_SR_register(CPUOFF + GIE);
 	readMeasurementMPU(ALL_MPU, (void*)&dataMPU);
+	if (started == 0) {
+		sendString(1, "MPU Success\r\n");
+	}
 	readMeasurementMPL(ALL_MPL, (void*)&dataMPL);
+	if (started == 0) {
+		sendString(1, "MPL Success\r\n");
+	}
 	uint8_t update = checkForUpdate(&gps);
 	if (update) {
 		lastGPS = gps;
@@ -95,7 +104,12 @@ void collect(collection_t* data) {
 	data->data.gps.location = lastGPS.location;
 	data->data.gps.fix = lastGPS.fix;
 	data->data.gps.status = lastGPS.status;
-	__no_operation();
+
+	if (timer_ticks % config.storeRate == 0) {
+		save(data);
+	}
+
+	started = 1;
 }
 
 #pragma vector=TIMER1_A1_VECTOR
