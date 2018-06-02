@@ -90,6 +90,8 @@ flightState_t update(collection_t* data) {
 }
 
 void updateStorage(collection_t* data) {
+	// Assume the payload will be placed flat, GPS down
+	// Z axis will be facing upwards, towards the sky
 	*accelPos = data->data.accel.z;
 	*altPos = data->data.altitude;
 	tempAvgAccel[measCount % 3] = *accelPos;

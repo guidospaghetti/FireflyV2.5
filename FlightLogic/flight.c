@@ -41,10 +41,6 @@ void wait_for_launch() {
 	while (1) {
 		collect(&data);
 		SWITCH_RED();
-
-		//sendString(1, "%.3f\t%.3f\t%.3f\r\n", data.data.altitude, data.data.temp, data.data.accel.z);
-		// Assume the payload will be placed flat, GPS down
-		// Z axis will be facing upwards, towards the sky
 		flightState_t flightState = update(&data);
 		if (flightState == UPWARDS) {
 			RED_OFF();
@@ -63,10 +59,10 @@ void upwards(void) {
 	collection_t data;
 	while (1) {
 		collect(&data);
-		SWITCH_GREEN();
+		SWITCH_RED();
 		flightState_t flightState = update(&data);
 		if (flightState == DOWNWARDS) {
-			GREEN_OFF();
+			RED_OFF();
 			stop_collection();
 			break;
 		}
@@ -99,11 +95,12 @@ void landed(void) {
 	collectionConfig_t config;
 	config.lpm = 4;
 	config.sampleRate = 5000;
+	config.storeRate = 0;
 	setup_collection(&config);
 	collection_t data;
 	while (1) {
 		collect(&data);
-		SWITCH_GREEN();
+		SWITCH_RED();
 		flightState_t flightState = update(&data);
 	}
 }
