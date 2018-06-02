@@ -1,11 +1,12 @@
 #include "flightTiming.h"
+#include "uart.h"
 
 #define ACCEL_HIST_SIZE		15
 #define ALT_HIST_SIZE		15
 #define AVERAGE_ACCEL_SIZE	ACCEL_HIST_SIZE - 2
 #define AVERAGE_ALT_SIZE	ALT_HIST_SIZE - 2
 #define ROLLING_AVERAGE_LEN	3
-#define ACCEL_THRESHOLD		8.0f
+#define ACCEL_THRESHOLD		3.0f
 #define ALT_DIFF_THRESHOLD	25
 
 float accelHist[ACCEL_HIST_SIZE];
@@ -36,10 +37,10 @@ void incPosRaw(void);
 void incPosAvg(void);
 
 void initDataStorage(void) {
-	accelEnd += ACCEL_HIST_SIZE;
-	altEnd += ALT_HIST_SIZE;
-	avgAccelEnd += AVERAGE_ACCEL_SIZE;
-	avgAltEnd += AVERAGE_ALT_SIZE;
+	accelEnd = &accelHist[ACCEL_HIST_SIZE];
+	altEnd = &altHist[ALT_HIST_SIZE];
+	avgAccelEnd = &averageAccel[AVERAGE_ACCEL_SIZE];
+	avgAltEnd = &averageAlt[AVERAGE_ALT_SIZE];
 }
 
 flightState_t update(collection_t* data) {
@@ -50,6 +51,7 @@ flightState_t update(collection_t* data) {
 	switch (state) {
 	case ON_PAD:
 		if (*curAvgAccel > ACCEL_THRESHOLD) {
+			sendString(1, "UPWARDS\r\n");
 			state = UPWARDS;
 		}
 		else {
@@ -58,6 +60,7 @@ flightState_t update(collection_t* data) {
 		break;
 	case UPWARDS:
 		if (maxAltitude - ALT_DIFF_THRESHOLD > *curAvgAccel) {
+			sendString(1, "DOWNWARDS\r\n");
 			state = DOWNWARDS;
 		}
 		else {
@@ -69,6 +72,7 @@ flightState_t update(collection_t* data) {
 			zeroCount++;
 		}
 		if (zeroCount > 100) {
+			sendString(1, "LANDED\r\n");
 			state = LANDED;
 		}
 		else {
@@ -88,6 +92,8 @@ flightState_t update(collection_t* data) {
 void updateStorage(collection_t* data) {
 	*accelPos = data->data.accel.z;
 	*altPos = data->data.altitude;
+	tempAvgAccel[measCount % 3] = *accelPos;
+	tempAvgAlt[measCount % 3] = *altPos;
 
 	if (measCount % 3 == 0) {
 		float sumAccel = 0, sumAlt = 0;
@@ -105,12 +111,9 @@ void updateStorage(collection_t* data) {
 
 		incPosAvg();
 	}
-	else {
-		tempAvgAccel[measCount % 3] = *accelPos;
-		tempAvgAlt[measCount % 3] = *altPos;
-	}
 
 	incPosRaw();
+	measCount++;
 }
 
 void incPosRaw(void) {
