@@ -33,8 +33,8 @@ void wait_for_launch() {
 	config.lpm = 4;
 	// Get data at 40 Hz
 	config.sampleRate = 40;
-	// Store data every second, 40 ms * 25 = 1 s
-	config.storeRate = 25;
+	// Store data every 10 seconds, 40 ms * 250 = 10 s
+	config.storeRate = 250;
 	setup_collection(&config);
 	initDataStorage();
 	collection_t data;
@@ -58,6 +58,7 @@ void upwards(void) {
 	collectionConfig_t config;
 	config.lpm = 4;
 	config.sampleRate = 40;
+	config.storeRate = 1;
 	setup_collection(&config);
 	collection_t data;
 	while (1) {
@@ -76,6 +77,7 @@ void downwards(void) {
 	collectionConfig_t config;
 	config.lpm = 4;
 	config.sampleRate = 2000;
+	config.storeRate = 2;
 	setup_collection(&config);
 	collection_t data;
 	uint8_t count = 0;
