@@ -12,11 +12,11 @@
 #include "stdio.h"
 #include "flight.h"
 #include "retrieval.h"
+#include "transmission.h"
 #include "LED.h"
 
 #define ENTER_LPM0()	__bis_SR_register(CPUOFF + GIE)
 
-trx_cfg_struct trx_cfg;
 extern unsigned long volatile time_counter;
 unsigned char wakeup_on_wdt;
 
@@ -29,11 +29,8 @@ typedef enum payloadMode_t {
 void msp_setup(void);
 payloadMode_t get_mode(void);
 void sendHelloMessage(void);
-void cc1120Init(void);
-void sendMPUMPL(allMPUData_t* mpu, allMPLData_t* mpl);
 void setClock16MHz(void);
 void sendGPSDataUART(gpsData_t* gps);
-void sendGPSDataTrx(gpsData_t* gps);
 
 int main(void) {
 	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
@@ -52,20 +49,6 @@ int main(void) {
     }
 
     return 0;
-
-//    while(1) {
-//    	readMeasurementMPU(ALL_MPU, (void*)&dataMPU);
-//    	readMeasurementMPL(ALL_MPL, (void*)&dataMPL);
-//    	uint8_t update = checkForUpdate(&gps);
-//    	//sendMPUMPL(&dataMPU, &dataMPL);
-//    	if (update) {
-//    		sendGPSDataUART(&gps);
-//    		sendGPSDataTrx(&gps);
-//    	}
-//    	__no_operation();
-//    }
-//
-//	return (int)dataMPL.temp + (int)dataMPU.temp;
 }
 
 void msp_setup(void) {
@@ -110,7 +93,7 @@ void msp_setup(void) {
     hal_UART_Init();
 
     // Initialize the transciever
-    cc1120Init();
+    CC1120Init();
 }
 
 payloadMode_t get_mode(void) {
@@ -145,27 +128,6 @@ void sendHelloMessage(void) {
 	sendUARTA1(buffer, strlen(buffer));
 }
 
-void cc1120Init(void) {
-	trx_cfg.bit_rate = radio_init(4);
-	trx_cfg.bit_rate *= 100;
-
-	trx_cfg.b_length = TX_BUFF_SIZE;
-	rf_default_setup(&trx_cfg);
-
-	set_rf_packet_length(trx_cfg.b_length);
-	radio_set_freq(trx_cfg.start_freq+(trx_cfg.ch_spc*trx_cfg.rf_channel));
-
-}
-
-void sendMPUMPL(allMPUData_t* mpu, allMPLData_t* mpl) {
-	char buffer[100];
-	sprintf(buffer, "%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\r\n",
-					mpl->pressure, mpl->temp, mpu->temp,
-					mpu->accelX, mpu->accelY, mpu->accelZ,
-					mpu->gyroX, mpu->gyroY, mpu->gyroZ);
-
-	sendUARTA1(buffer, strlen(buffer));
-}
 
 void setClock16MHz(void) {
 	UCSCTL0 = 0x00;                           // Set lowest possible DCOx, MODx
