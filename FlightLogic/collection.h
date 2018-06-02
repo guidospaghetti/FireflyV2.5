@@ -4,6 +4,8 @@
 #ifndef COLLECTION_H
 #define COLLECTION_H
 
+#define COLLECTION_SIZE	55+1
+
 typedef union collection_t {
 	struct data {
 		struct gps {
@@ -25,7 +27,7 @@ typedef union collection_t {
 		float altitude;
 		float temp;
 	} data;
-	uint8_t bytes[55];
+	uint8_t bytes[COLLECTION_SIZE];
 } collection_t;
 
 typedef struct collectionConfig_t {
