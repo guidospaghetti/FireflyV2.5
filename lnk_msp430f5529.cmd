@@ -62,8 +62,10 @@ MEMORY
     INFOB                   : origin = 0x1900, length = 0x0080
     INFOC                   : origin = 0x1880, length = 0x0080
     INFOD                   : origin = 0x1800, length = 0x0080
-    FLASH                   : origin = 0x4400, length = 0xBB80
-    FLASH2                  : origin = 0x10000,length = 0x14400
+    FLASH                   : origin = 0x4400, length = 0x1000
+    FLASH3                  : origin = 0x5400, length = 0xAB80
+    FLASH2                  : origin = 0x10000,length = 0xA200
+    FLASH4                  : origin = 0x1A200,length = 0xA200
     INT00                   : origin = 0xFF80, length = 0x0002
     INT01                   : origin = 0xFF82, length = 0x0002
     INT02                   : origin = 0xFF84, length = 0x0002
