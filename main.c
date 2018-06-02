@@ -14,7 +14,7 @@
 #include "retrieval.h"
 #include "LED.h"
 
-#define ENTER_LMP0()	__bis_SR_register(CPUOFF + GIE)
+#define ENTER_LPM0()	__bis_SR_register(CPUOFF + GIE)
 
 trx_cfg_struct trx_cfg;
 extern unsigned long volatile time_counter;
@@ -119,7 +119,7 @@ payloadMode_t get_mode(void) {
 	wakeup_on_wdt = 1;
 	wakeupOn1 = 1;
 	while (1) {
-		ENTER_LMP0();
+		ENTER_LPM0();
 		if (hal_UART_DataAvailable(1)) {
 			if (lastByte1 == '0') {
 				wakeup_on_wdt = 0;
