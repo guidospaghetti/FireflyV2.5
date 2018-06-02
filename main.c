@@ -72,6 +72,7 @@ void msp_setup(void) {
 
 	INIT_LEDS();
 	RED_ON();
+	GREEN_OFF();
 
 	setClock16MHz();
 
@@ -123,11 +124,13 @@ payloadMode_t get_mode(void) {
 			if (lastByte1 == '0') {
 				wakeup_on_wdt = 0;
 				wakeupOn1 = 0;
+				sendString(1, "0\r\n");
 				return FLIGHT;
 			}
 			else if (lastByte1 == '1') {
 				wakeup_on_wdt = 0;
 				wakeupOn1 = 0;
+				sendString(1, "1\r\n");
 				return RETRIEVAL;
 			}
 		}
