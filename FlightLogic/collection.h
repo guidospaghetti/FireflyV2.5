@@ -33,7 +33,8 @@ typedef union collection_t {
 typedef struct collectionConfig_t {
 	uint8_t lpm;			/**< Low power mode configuration, see MpuUtil.h*/
 	uint16_t sampleRate;	/**< Sampling rate in ms for each measurement, if lpm > 0 then GPS will be polled at 1 Hz*/
-	uint16_t storeRate;		/**< How often data will be stored, increments of sample rate. i.e. 1 - save every sample, 2 - save every other, etc.*/
+	uint16_t storeRate;		/**< How often data will be stored, increments of sample rate. i.e. 1 - save every sample, 2 - save every other, etc. 0 - don't store data*/
+	uint16_t transmitRate;	/**< How ofter data will be transmitted, increments of sample rate*/
 } collectionConfig_t;
 
 void setup_collection(collectionConfig_t* _config);

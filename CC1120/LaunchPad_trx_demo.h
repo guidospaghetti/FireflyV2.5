@@ -83,7 +83,7 @@
 
 // Buffer sizes
 #define UART_BUFF_SIZE 80
-#define TX_BUFF_SIZE   64
+#define TX_BUFF_SIZE   56
 #define RSSI_OFFSET    72
 
 typedef struct trx_cfg {

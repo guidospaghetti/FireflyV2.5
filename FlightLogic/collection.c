@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "storage.h"
 #include "collection.h"
+#include "transmission.h"
 #include "MTK3339.h"
 #include "MpuUtil.h"
 #include "MplUtil.h"
@@ -14,6 +15,8 @@
 uint32_t timer_ticks = 0;
 gpsData_t lastGPS;
 collectionConfig_t config;
+
+void updateSensors(collection_t* data);
 
 void setup_collection(collectionConfig_t* _config) {
     static uint8_t setup = 0;
@@ -67,14 +70,33 @@ void stop_collection(void) {
 }
 
 void collect(collection_t* data) {
-	static uint8_t started = 0;
 
-	allMPUData_t dataMPU;
-	allMPLData_t dataMPL;
-	gpsData_t gps;
 	TA1CCTL1 = CCIE;
 	// Enter LPM
 	__bis_SR_register(CPUOFF + GIE);
+
+	updateSensors(data);
+
+	if (config.storeRate > 0) {
+		if (timer_ticks % config.storeRate == 0) {
+			save(data);
+		}
+	}
+
+	if (config.transmitRate > 0) {
+		if (timer_ticks % config.transmitRate == 0) {
+			transmit(data);
+		}
+	}
+
+}
+
+void updateSensors(collection_t* data) {
+	static uint8_t started = 0;
+	allMPUData_t dataMPU;
+	allMPLData_t dataMPL;
+	gpsData_t gps;
+
 	readMeasurementMPU(ALL_MPU, (void*)&dataMPU);
 	if (started == 0) {
 		sendString(1, "MPU Success\r\n");
@@ -87,6 +109,7 @@ void collect(collection_t* data) {
 	if (update) {
 		lastGPS = gps;
 	}
+
 	data->data.accel.x = dataMPU.accelX;
 	data->data.accel.y = dataMPU.accelY;
 	data->data.accel.z = dataMPU.accelZ;
@@ -104,10 +127,6 @@ void collect(collection_t* data) {
 	data->data.gps.location = lastGPS.location;
 	data->data.gps.fix = lastGPS.fix;
 	data->data.gps.status = lastGPS.status;
-
-	if (timer_ticks % config.storeRate == 0) {
-		save(data);
-	}
 
 	started = 1;
 }
