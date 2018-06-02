@@ -45,6 +45,7 @@ void wait_for_launch() {
 		// Z axis will be facing upwards, towards the sky
 		flightState_t flightState = update(&data);
 		if (flightState == UPWARDS) {
+			RED_OFF();
 			break;
 		}
 	}
@@ -61,6 +62,7 @@ void upwards(void) {
 		SWITCH_GREEN();
 		flightState_t flightState = update(&data);
 		if (flightState == DOWNWARDS) {
+			GREEN_OFF();
 			break;
 		}
 	}
@@ -68,15 +70,16 @@ void upwards(void) {
 
 void downwards(void) {
 	collectionConfig_t config;
-	config.lpm = 4;
+	config.lpm = 1;
 	config.rate = 2000;
 	setup_collection(&config);
 	collection_t data;
 	while (1) {
 		collect(&data);
-		SWITCH_GREEN();
+		SWITCH_RED();
 		flightState_t flightState = update(&data);
-		if (flightState == DOWNWARDS) {
+		if (flightState == LANDED) {
+			RED_OFF();
 			break;
 		}
 	}
