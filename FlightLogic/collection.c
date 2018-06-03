@@ -35,7 +35,7 @@ void setup_collection(collectionConfig_t* _config) {
 		params.updateRate = 1000;
 	}
 	else {
-		params.updateRate = (config.sampleRate > 100) ? config.sampleRate : 100;
+		params.updateRate = (_config->sampleRate > 0.100f) ? (uint16_t)(_config->sampleRate * 1000) : 100;
 	}
 
     // Initialize GPS
@@ -55,9 +55,9 @@ void setup_collection(collectionConfig_t* _config) {
 		mplInit(ALTITUDE_MODE);
     }
     // Setup timer
-    uint16_t value = (uint16_t)((float)(SMCLK >> 3) / (float)_config->sampleRate);
+    uint16_t value = (uint16_t)((float)(ACLK >> 2) * _config->sampleRate);
     TA1CCR0 = value;
-    TA1CTL = TASSEL__SMCLK + MC__UP + TACLR + ID__8 + TAIE;
+    TA1CTL = TASSEL__ACLK + MC__UP + TACLR + ID__4 + TAIE;
 
     setup = 1;
 }
