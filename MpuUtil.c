@@ -218,7 +218,7 @@ inline float cvtAccel(int16_t accel) {
     case 3:
         return (~accel + 0x01) / (2048.0f);
     default:
-        return 0;
+    	return (~accel + 0x01) / (2048.0f);
     }
 }
 
@@ -235,7 +235,7 @@ inline float cvtGyro(int16_t gyro) {
     case 3:
         return (~gyro + 0x01) / (16.4f);
     default:
-        return 0;
+    	return (~gyro + 0x01) / (32.8f);
     }
 }
 
@@ -250,8 +250,8 @@ void mpuInit(mpuConfig_t* _config) {
     // Delay to ensure correct data
     __delay_cycles(50000);
 
-    // Reset the signal paths for all sensors
-    writeRegister(MPU6050_RA_SIGNAL_PATH_RESET, 0x07);
+    // Reset the signal paths and sensor registers for all sensors
+    writeRegister(MPU6050_RA_USER_CTRL, 0x01);
 
     if (config.LPM > 0) {
     	// Set CYCLE = 1, SLEEP = 0, TEMP_DIS = 1
@@ -262,6 +262,12 @@ void mpuInit(mpuConfig_t* _config) {
     	pwm2 += 0x07;
     	// Set STBY_(X,Y,Z)G = 1 and the LP_WAKE_CTRL bits according to user input
     	writeRegister(MPU6050_RA_PWR_MGMT_2, pwm2);
+    }
+    else {
+    	// Ensure the device is not in sleep or cycle mode
+    	writeRegister(MPU6050_RA_PWR_MGMT_1, 0x00);
+    	// Ensure that none of the sensors are in standby mode
+    	writeRegister(MPU6050_RA_PWR_MGMT_2, 0x00);
     }
 
     // Place the accelerometer in mode defined by the scale
