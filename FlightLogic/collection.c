@@ -16,7 +16,7 @@ uint32_t timer_ticks = 0;
 gpsData_t lastGPS;
 collectionConfig_t config;
 
-void updateSensors(collection_t* data);
+void updateSensors(collection_t* data, uint8_t verbose);
 
 void setup_collection(collectionConfig_t* _config) {
     static uint8_t setup = 0;
@@ -69,13 +69,20 @@ void stop_collection(void) {
 	timer_ticks = 0;
 }
 
-void collect(collection_t* data) {
+void collect(collection_t* data, uint8_t verbose) {
 
 	TA1CCTL1 = CCIE;
+	if (verbose == 1) {
+		sendString(1, "Entering LPM\r\n");
+	}
 	// Enter LPM
 	__bis_SR_register(CPUOFF + GIE);
 
-	updateSensors(data);
+	if (verbose == 1) {
+		sendString(1, "Exited LPM\r\n");
+	}
+
+	updateSensors(data, verbose);
 
 	if (config.storeRate > 0) {
 		if (timer_ticks % config.storeRate == 0) {
@@ -91,23 +98,31 @@ void collect(collection_t* data) {
 
 }
 
-void updateSensors(collection_t* data) {
+void updateSensors(collection_t* data, uint8_t verbose) {
 	static uint8_t started = 0;
 	allMPUData_t dataMPU;
 	allMPLData_t dataMPL;
 	gpsData_t gps;
 
 	readMeasurementMPU(ALL_MPU, (void*)&dataMPU);
-	if (started == 0) {
+	if (started == 0 || verbose == 1) {
 		sendString(1, "MPU Success\r\n");
 	}
 	readMeasurementMPL(ALL_MPL, (void*)&dataMPL);
-	if (started == 0) {
+	if (started == 0 || verbose == 1) {
 		sendString(1, "MPL Success\r\n");
 	}
 	uint8_t update = checkForUpdate(&gps);
 	if (update) {
 		lastGPS = gps;
+		if (started == 0 || verbose == 1) {
+			sendString(1, "GPS Updated\r\n");
+		}
+	}
+	else {
+		if (started == 0 || verbose == 1) {
+			sendString(1, "GPS Not Updated\r\n");
+		}
 	}
 
 	data->data.accel.x = dataMPU.accelX;

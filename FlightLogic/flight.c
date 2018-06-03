@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define NO_SAVING
+
 void wait_for_launch(void);
 void upwards(void);
 void downwards(void);
@@ -32,15 +34,20 @@ void wait_for_launch() {
 	// Set the LPM of the MPU6050 to 40 Hz
 	config.lpm = 4;
 	// Get data at 40 Hz
-	config.sampleRate = 40;
+	config.sampleRate = 0.025;
+#ifndef NO_SAVING
 	// Store data every 10 seconds, 40 ms * 250 = 10 s
 	config.storeRate = 250;
+#else
+	config.storeRate = 0;
+#endif
 	setup_collection(&config);
 	initDataStorage();
 	collection_t data;
 	while (1) {
-		collect(&data);
-		SWITCH_RED();
+		RED_OFF();
+		collect(&data, 0);
+		RED_ON();
 		flightState_t flightState = update(&data);
 		if (flightState == UPWARDS) {
 			RED_OFF();
@@ -52,14 +59,19 @@ void wait_for_launch() {
 
 void upwards(void) {
 	collectionConfig_t config;
-	config.lpm = 4;
-	config.sampleRate = 40;
+	config.lpm = 0;
+	config.sampleRate = 0.025;
+#ifndef NO_SAVING
 	config.storeRate = 1;
+#else
+	config.storeRate = 0;
+#endif
 	setup_collection(&config);
 	collection_t data;
 	while (1) {
-		collect(&data);
-		SWITCH_RED();
+		RED_OFF();
+		collect(&data, 0);
+		RED_ON();
 		flightState_t flightState = update(&data);
 		if (flightState == DOWNWARDS) {
 			RED_OFF();
@@ -71,17 +83,19 @@ void upwards(void) {
 
 void downwards(void) {
 	collectionConfig_t config;
-	config.lpm = 4;
-	config.sampleRate = 2000;
+	config.lpm = 0;
+	config.sampleRate = 2;
+#ifndef NO_SAVING
 	config.storeRate = 2;
+#else
+	config.storeRate = 0;
+#endif
 	setup_collection(&config);
 	collection_t data;
-	uint8_t count = 0;
 	while (1) {
-		sendString(1, "%d\r\n", count);
-		count++;
-		collect(&data);
-		SWITCH_RED();
+		RED_OFF();
+		collect(&data, 1);
+		RED_ON();
 		flightState_t flightState = update(&data);
 		if (flightState == LANDED) {
 			RED_OFF();
@@ -94,13 +108,18 @@ void downwards(void) {
 void landed(void) {
 	collectionConfig_t config;
 	config.lpm = 4;
-	config.sampleRate = 5000;
+	config.sampleRate = 5;
+#ifndef NO_SAVING
 	config.storeRate = 0;
+#else
+	config.storeRate = 0;
+#endif
 	setup_collection(&config);
 	collection_t data;
 	while (1) {
-		collect(&data);
-		SWITCH_RED();
+		RED_OFF();
+		collect(&data, 0);
+		RED_ON();
 		flightState_t flightState = update(&data);
 	}
 }

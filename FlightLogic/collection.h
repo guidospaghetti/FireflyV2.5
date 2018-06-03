@@ -39,6 +39,6 @@ typedef struct collectionConfig_t {
 
 void setup_collection(collectionConfig_t* _config);
 void stop_collection(void);
-void collect(collection_t* data);
+void collect(collection_t* data, uint8_t verbose);
 
 #endif
