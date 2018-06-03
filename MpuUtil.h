@@ -36,24 +36,35 @@ typedef enum measurementMPU_t {
 } measurementMPU_t;
 
 typedef struct allMPUData_t {
-	float accelX;
-	float accelY;
-	float accelZ;
-	float gyroX;
-	float gyroY;
-	float gyroZ;
-	float temp;
+	float accelX;	/**< Acceleration in X direction in g's*/
+	float accelY;	/**< Acceleration in Y direction in g's*/
+	float accelZ;	/**< Acceleration in Z direction in g's*/
+	float gyroX;	/**< Change in gyroscopic position in X direction in deg/sec*/
+	float gyroY;	/**< Change in gyroscopic position in Y direction in deg/sec*/
+	float gyroZ;	/**< Change in gyroscopic position in Z direction in deg/sec*/
+	float temp;		/**< Temperature in Celsius*/
 } allMPUData_t;
 
 /**
- * @fn readMeasurement(enum measurementMPU_t mm)
  * @param mm Type of measurement to read
- * @brief Returns the current value of the specified sensor
+ * @param data Pointer to where the output data will be stored
+ * @brief This function stores the value of the measurement requested into the location
+ * specified by the data parameter
+ *
+ * The possible output data types are:
+ * ACCEL_X  - float
+ * ACCEL_X  - float
+ * ACCEL_X  - float
+ * GYRO_X   - float
+ * GYRO_X   - float
+ * GYRO_X   - float
+ * TEMP_MPU - float
+ * ALL_MPU  - allMPUData_t
  */
 void readMeasurementMPU(measurementMPU_t mm, void* data);
 
 /**
- * @fn mpuInit();
- * @brief TODO
+ *  @param _config How the MPU6050 will be initialized
+ *  @brief Initializes the MPU6050 according to the configuration given
  */
 void mpuInit(mpuConfig_t* _config);

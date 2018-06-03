@@ -200,7 +200,23 @@ typedef struct gpsParams_t {
 	uint8_t outputFrames;	/**< Which frames will be outputted from the GPS*/
 } gpsParams_t;
 
+/**
+ *  @param params How the GPS should be initialized
+ *  @brief Initializes the GPS to be ready to output the data requested
+ */
 void initGPS(gpsParams_t* params);
+
+/**
+ *  @param gps Pointer to a gpsData_t structure where the output will be stored
+ *  @return 0 - No update, nothing stored 1 - Update, stored in gps
+ *  @brief Stores the output of the GPS into gps if there is an update
+ */
 uint8_t checkForUpdate(gpsData_t* gps);
+
+/**
+ *  @param byte The byte received over UART
+ *  @brief Function designed to be called by UART Rx interrupt. Simply appends characters 
+ *  together if they are a part of a GPS output. Sets flag for if a full command is found
+ */
 void gpsRxHandler(uint8_t byte);
 #endif /* MTK3339_H_ */
