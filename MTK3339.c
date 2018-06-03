@@ -27,8 +27,10 @@ void sendGPSMessage(char* message);
 uint8_t genChecksum(char* message);
 
 void initGPS(gpsParams_t* params) {
-
-	addRxHandler(&gpsRxHandler, 0);
+	static uint8_t started = 0;
+	if (started == 0) {
+		addRxHandler(&gpsRxHandler, 0);
+	}
 
 	char message[50];
 	sprintf(message, PMTK_SET_NMEA_UPDATERATE ",%d", params->updateRate);
@@ -41,6 +43,8 @@ void initGPS(gpsParams_t* params) {
 			(params->outputFrames & PMTK_GSA) >> 3,
 			(params->outputFrames & PMTK_GSV) >> 4);
 	sendGPSMessage(message);
+
+	started = 1;
 }
 
 void sendGPSMessage(char* message) {
