@@ -59,7 +59,7 @@ flightState_t update(collection_t* data) {
 		}
 		break;
 	case UPWARDS:
-		if (maxAltitude - ALT_DIFF_THRESHOLD > *curAvgAccel) {
+		if (maxAltitude - ALT_DIFF_THRESHOLD > *curAvgAlt) {
 			sendString(1, "DOWNWARDS\r\n");
 			state = DOWNWARDS;
 		}
@@ -71,7 +71,7 @@ flightState_t update(collection_t* data) {
 		if (*curAvgAlt - prevAlt < 1 || *curAvgAlt - prevAlt > -1) {
 			zeroCount++;
 		}
-		if (zeroCount > 100) {
+		if (zeroCount > 10) {
 			sendString(1, "LANDED\r\n");
 			state = LANDED;
 		}
