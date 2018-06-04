@@ -1,4 +1,7 @@
 #include <msp430.h>
+#include <stdio.h>
+#include <string.h>
+#include "settings.h"
 #include "MpuUtil.h"
 #include "MplUtil.h"
 #include "MTK3339.h"
@@ -7,18 +10,12 @@
 #include "transmission.h"
 #include "LED.h"
 #include "flightTiming.h"
-#include <stdio.h>
-#include <string.h>
 
-#define NO_SAVING
 
 void wait_for_launch(void);
 void upwards(void);
 void downwards(void);
 void landed(void);
-uint8_t detectLaunch(void);
-uint8_t detectApogee(void);
-uint8_t detectLanding(void);
 
 void run_flight(void) {
 	initDataStorage();
@@ -34,12 +31,17 @@ void wait_for_launch() {
 	// Set the LPM of the MPU6050 to 40 Hz
 	config.lpm = 4;
 	// Get data at 40 Hz
-	config.sampleRate = 0.025;
+	config.sampleRate = WAIT_FOR_LAUNCH_SAMPLE_RATE;
 #ifndef NO_SAVING
 	// Store data every 10 seconds, 40 ms * 250 = 10 s
-	config.storeRate = 250;
+	config.storeRate = WAIT_FOR_LAUNCH_STORAGE_RATE;
 #else
 	config.storeRate = 0;
+#endif
+#ifndef NO_TRANSMITTING
+	config.transmitRate = WAIT_FOR_LAUNCH_TRANSMIT_RATE;
+#else
+	config.transmitRate = 0;
 #endif
 	setup_collection(&config);
 	initDataStorage();
@@ -60,11 +62,16 @@ void wait_for_launch() {
 void upwards(void) {
 	collectionConfig_t config;
 	config.lpm = 0;
-	config.sampleRate = 0.025;
+	config.sampleRate = UPWARDS_SAMPLE_RATE;
 #ifndef NO_SAVING
-	config.storeRate = 1;
+	config.storeRate = UPWARDS_STORAGE_RATE;
 #else
 	config.storeRate = 0;
+#endif
+#ifndef NO_TRANSMITTING
+	config.transmitRate = UPWARDS_TRANSMIT_RATE;
+#else
+	config.transmitRate = 0;
 #endif
 	setup_collection(&config);
 	collection_t data;
@@ -84,11 +91,16 @@ void upwards(void) {
 void downwards(void) {
 	collectionConfig_t config;
 	config.lpm = 0;
-	config.sampleRate = 2;
+	config.sampleRate = DOWNWARDS_SAMPLE_RATE;
 #ifndef NO_SAVING
-	config.storeRate = 2;
+	config.storeRate = DOWNWARDS_STORAGE_RATE;
 #else
 	config.storeRate = 0;
+#endif
+#ifndef NO_TRANSMITTING
+	config.transmitRate = DOWNWARDS_TRANSMIT_RATE;
+#else
+	config.transmitRate = 0;
 #endif
 	setup_collection(&config);
 	collection_t data;
@@ -108,11 +120,16 @@ void downwards(void) {
 void landed(void) {
 	collectionConfig_t config;
 	config.lpm = 4;
-	config.sampleRate = 5;
+	config.sampleRate = LANDED_SAMPLE_RATE;
 #ifndef NO_SAVING
-	config.storeRate = 0;
+	config.storeRate = LANDED_STORAGE_RATE;
 #else
 	config.storeRate = 0;
+#endif
+#ifndef NO_TRANSMITTING
+	config.transmitRate = LANDED_TRANSMIT_RATE;
+#else
+	config.transmitRate = 0;
 #endif
 	setup_collection(&config);
 	collection_t data;
