@@ -1,5 +1,6 @@
 #include "flightTiming.h"
 #include "uart.h"
+#include "settings.h"
 
 #define ACCEL_HIST_SIZE		15
 #define ALT_HIST_SIZE		15
@@ -8,6 +9,9 @@
 #define ROLLING_AVERAGE_LEN	3
 #define ACCEL_THRESHOLD		3.0f
 #define ALT_DIFF_THRESHOLD	25
+#define LANDED_THRESHOLD	3
+#define ZERO_COUNT_TIME		10.0f
+#define ZERO_COUNT_THRESH	(uint8_t)(ZERO_COUNT_TIME / DOWNWARDS_SAMPLE_RATE)
 
 float accelHist[ACCEL_HIST_SIZE];
 float altHist[ALT_HIST_SIZE];
@@ -31,6 +35,7 @@ float* avgAltEnd = averageAlt;
 uint64_t measCount = 1;
 float maxAltitude = -1000.0f;
 float prevAlt = 0.0f;
+const uint8_t zeroCountThresh = ZERO_COUNT_THRESH > 0 ? ZERO_COUNT_THRESH : 1;
 
 void updateStorage(collection_t* data);
 void incPosRaw(void);
@@ -68,10 +73,10 @@ flightState_t update(collection_t* data) {
 		}
 		break;
 	case DOWNWARDS:
-		if (*curAvgAlt - prevAlt < 1 || *curAvgAlt - prevAlt > -1) {
+		if (*curAvgAlt - prevAlt < LANDED_THRESHOLD || *curAvgAlt - prevAlt > -LANDED_THRESHOLD) {
 			zeroCount++;
 		}
-		if (zeroCount > 10) {
+		if (zeroCount > zeroCountThresh) {
 			sendString(1, "LANDED\r\n");
 			state = LANDED;
 		}
