@@ -11,9 +11,8 @@ void CC1120Init(void) {
 	trx_cfg.bit_rate = radio_init(4);
 	trx_cfg.bit_rate *= 100;
 
-	trx_cfg.b_length = TX_BUFF_SIZE;
 	rf_default_setup(&trx_cfg);
-
+	trx_cfg.b_length = TX_BUFF_SIZE;
 	set_rf_packet_length(trx_cfg.b_length);
 	radio_set_freq(trx_cfg.start_freq+(trx_cfg.ch_spc*trx_cfg.rf_channel));
 
