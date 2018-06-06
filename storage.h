@@ -10,6 +10,7 @@
 #define STORAGE_H_
 
 void save(collection_t* data);
-void readNext(collection_t* data);
+void saveEnd(void);
+uint8_t readNext(collection_t* data);
 
 #endif /* STORAGE_H_ */
