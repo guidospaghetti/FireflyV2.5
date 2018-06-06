@@ -128,7 +128,6 @@ void sendHelloMessage(void) {
 	sendUARTA1(buffer, strlen(buffer));
 }
 
-
 void setClock16MHz(void) {
 	UCSCTL0 = 0x00;                           // Set lowest possible DCOx, MODx
 	UCSCTL1 = DCORSEL_6;                      // Select suitable range
