@@ -42,16 +42,19 @@ void mplInit(modeMPL_t mode_) {
 
 void altitudeMode(void) {
 	// Write 1 0 111 0 0 0, Put in altitude mode, No RAW data, Oversampling ratio of 128, reset disabled, do not use one shot, put in standby mode
-	mplWriteReg(MPL3115A2_CTRL_REG1, 0xB8);
+	//mplWriteReg(MPL3115A2_CTRL_REG1, 0xB8);
+	// Write 1 0 010 0 0 0, Put in altitude mode, No RAW data, Oversampling ratio of 4, reset disabled, do not use one shot, put in standby mode
+	mplWriteReg(MPL3115A2_CTRL_REG1, 0x90);
 	// Write 00000 1 1 1, Reserved, Enable data ready flag, pressure/altitude data ready flag, and temperature data ready flag
 	mplWriteReg(MPL3115A2_PT_DATA_CFG, 0x07);
 	// Everything from before but the put in active mode instead of standby, determined by last bit
-	mplWriteReg(MPL3115A2_CTRL_REG1, 0xB9);
+	//mplWriteReg(MPL3115A2_CTRL_REG1, 0xB9);
+	mplWriteReg(MPL3115A2_CTRL_REG1, 0x91);
 }
 
 void pressureMode(void) {
 	// Write 0 0 111 0 0 0, Put in pressure mode, No RAW data, Oversampling rate of 128, reset disabled, do not use one shot, put in standby mode
-	mplWriteReg(MPL3115A2_CTRL_REG1, 0x38);
+	//mplWriteReg(MPL3115A2_CTRL_REG1, 0x38);
 	// Write 00000 1 1 1, Reserved, Enable data ready flag, pressure/altitude data ready flag, and temperature data ready flag
 	mplWriteReg(MPL3115A2_PT_DATA_CFG, 0x07);
 	// Everything from before but the put in active mode instead of standby, determined by last bit
@@ -65,6 +68,17 @@ void readMeasurementMPL(measurementMPL_t mm, void* output) {
 	status = mplReadReg(MPL3115A2_STATUS);
 	if (status & 0x08 == 0) {
 		return;
+	}
+	// Activate one-shot mode to take a measurement now
+	switch (mode) {
+	case ALTITUDE_MODE:
+		mplWriteReg(MPL3115A2_CTRL_REG1, 0x93);
+		mplWriteReg(MPL3115A2_CTRL_REG1, 0x91);
+		break;
+	case PRESSURE_MODE:
+		mplWriteReg(MPL3115A2_CTRL_REG1, 0x13);
+		mplWriteReg(MPL3115A2_CTRL_REG1, 0x11);
+		break;
 	}
 
 	switch (mm) {
