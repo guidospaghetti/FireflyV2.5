@@ -231,7 +231,7 @@ void rf_default_setup(trx_cfg_struct *trx_cfg)
 	trx_cfg->max_wait_timer = 32000;
 	trx_cfg->sync_timer = 6432;
 	trx_cfg->xtal_wait_timer = 32;
-	trx_cfg->b_length = 20;
+	trx_cfg->b_length = TX_BUFF_SIZE;
 	//trx_cfg->start_freq = 902750;
 	trx_cfg->start_freq = 433500;
 	trx_cfg->ch_spc = 500;
