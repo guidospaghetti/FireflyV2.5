@@ -7,10 +7,11 @@
 #include "MpuUtil.h"
 #include "MplUtil.h"
 #include "uart.h"
+#include "settings.h"
 
 
 #define ACLK	32768
-#define SMCLK	16000000
+#define SMCLK	SYS_CLOCK
 
 uint32_t timer_ticks = 0;
 gpsData_t lastGPS;
@@ -58,7 +59,11 @@ void setup_collection(collectionConfig_t* _config) {
     uint16_t value = (uint16_t)((float)(ACLK >> 2) * _config->sampleRate);
     TA1CCR0 = value;
     TA1CTL = TASSEL__ACLK + MC__UP + TACLR + ID__4 + TAIE;
-
+#ifndef NO_SAVING
+    if (_config->doneStoring == 1) {
+    	saveEnd();
+    }
+#endif
     setup = 1;
 }
 

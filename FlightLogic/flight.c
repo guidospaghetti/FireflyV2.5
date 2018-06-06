@@ -11,7 +11,6 @@
 #include "LED.h"
 #include "flightTiming.h"
 
-
 void wait_for_launch(void);
 void upwards(void);
 void downwards(void);
@@ -33,7 +32,6 @@ void wait_for_launch() {
 	// Get data at 40 Hz
 	config.sampleRate = WAIT_FOR_LAUNCH_SAMPLE_RATE;
 #ifndef NO_SAVING
-	// Store data every 10 seconds, 40 ms * 250 = 10 s
 	config.storeRate = WAIT_FOR_LAUNCH_STORAGE_RATE;
 #else
 	config.storeRate = 0;
@@ -43,6 +41,7 @@ void wait_for_launch() {
 #else
 	config.transmitRate = 0;
 #endif
+	config.doneStoring = 0;
 	setup_collection(&config);
 	initDataStorage();
 	collection_t data;
@@ -73,6 +72,7 @@ void upwards(void) {
 #else
 	config.transmitRate = 0;
 #endif
+	config.doneStoring = 0;
 	setup_collection(&config);
 	collection_t data;
 	while (1) {
@@ -102,11 +102,12 @@ void downwards(void) {
 #else
 	config.transmitRate = 0;
 #endif
+	config.doneStoring = 0;
 	setup_collection(&config);
 	collection_t data;
 	while (1) {
 		RED_OFF();
-		collect(&data, 1);
+		collect(&data, 0);
 		RED_ON();
 		flightState_t flightState = update(&data);
 		if (flightState == LANDED) {
@@ -131,6 +132,7 @@ void landed(void) {
 #else
 	config.transmitRate = 0;
 #endif
+	config.doneStoring = 1;
 	setup_collection(&config);
 	collection_t data;
 	while (1) {
