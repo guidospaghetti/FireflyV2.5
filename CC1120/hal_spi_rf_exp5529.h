@@ -49,6 +49,7 @@ extern "C" {
 #include <msp430.h>
 #include "hal_types.h"
 #include "hal_defs.h"
+#include "firefly.h"
 
 /******************************************************************************
  * DEFINE THE TRANSCEIVER TO USE
@@ -63,7 +64,7 @@ extern "C" {
 /******************************************************************************
  * CONSTANTS
  */
-
+#ifndef FIREFLY_24
 /* Transceiver SPI signal */
 #define     RF_PORT_SEL            P4SEL
 #define     RF_PORT_OUT            P4OUT
@@ -178,6 +179,122 @@ extern "C" {
 
 #define RF_SPI_END()                st( NOP(); RF_CS_N_PORT_OUT |= RF_CS_N_PIN; )
 
+#else
+/* Transceiver SPI signal */
+#define     RF_PORT_SEL            P4SEL
+#define     RF_PORT_OUT            P4OUT
+#define     RF_PORT_DIR            P4DIR
+#define     RF_PORT_IN             P4IN
+
+#define     RF_MOSI_PIN            BIT1
+#define     RF_MISO_PIN            BIT2
+#define     RF_SCLK_PIN            BIT3
+
+/* Transceiver chip select signal */
+#define     RF_CS_N_PORT_SEL       P4SEL
+#define     RF_CS_N_PORT_DIR       P4DIR
+#define     RF_CS_N_PORT_OUT       P4OUT
+#define     RF_CS_N_PIN            BIT4
+
+/* Transciever optional reset signal */
+#define     RF_RESET_N_PORT_SEL       P1SEL
+#define     RF_RESET_N_PORT_DIR       P1DIR
+#define     RF_RESET_N_PORT_OUT       P1OUT
+#define     RF_RESET_N_PIN            BIT3
+
+/* CC1190 Control signals */
+#define    RF_LNA_EN_PxOUT         P1OUT
+#define    RF_LNA_EN_PxDIR         P1DIR
+#define    RF_LNA_EN_PIN           BIT6
+
+#define    RF_PA_EN_PxOUT          P2OUT
+#define    RF_PA_EN_PxDIR          P2DIR
+#define    RF_PA_EN_PIN            BIT7
+
+/* Transceiver interrupt configuration */
+#define     RF_PORT_VECTOR         TIMERB0_VECTOR
+#define     RF_GDO_OUT             P4OUT // Unused
+#define     RF_GDO_DIR             P4DIR // Unused
+#define     RF_GDO_IN              ((TB0CCTL0 & CCI) << 2)
+#define     RF_GDO_SEL             P4SEL // Unused
+#define     RF_GDO_PxIES           P1IES // Handled case by case
+#define     RF_GDO_PxIFG           ((TB0CCTL0 & CCIFG) << 5)
+#define     RF_GDO_PxIE            TB0CCTL0 // Handled case by case
+#define     RF_GDO_PIN             BIT5
+
+/* Optional button interrupt configuration */
+#define     BUTTON_VECTOR          PORT1_VECTOR
+#define     BUTTON_OUT             P1OUT
+#define     BUTTON_DIR             P1DIR
+#define     BUTTON_IN              P1IN
+#define     BUTTON_SEL             P1SEL
+#define     BUTTON_PxIES           P1IES
+#define     BUTTON_PxIFG           P1IFG
+#define     BUTTON_PxIE            P1IE
+#define     BUTTON_PIN             BIT0
+#define     BUTTON_REN             P1REN
+
+/* Macro to enable LEDs */
+#define     LED1_PxOUT      P5OUT
+#define     LED1_PxDIR      P5DIR
+#define     LED1_PIN        BIT0
+#define     LED2_PxOUT      P5OUT
+#define     LED2_PxDIR      P5DIR
+#define     LED2_PIN        BIT1
+#define     LED3_PxOUT      P1OUT
+#define     LED3_PxDIR      P1DIR
+#define     LED3_PIN        BIT0
+#define     LED4_PxOUT      P4OUT
+#define     LED4_PxDIR      P4DIR
+#define     LED4_PIN        BIT7
+
+#define     HAL_LED1_ON()     LED1_PxOUT |= LED1_PIN
+#define     HAL_LED2_ON()     LED2_PxOUT |= LED2_PIN
+#define     HAL_LED3_ON()     LED3_PxOUT |= LED3_PIN
+#define     HAL_LED4_ON()     LED4_PxOUT |= LED4_PIN
+
+#define     HAL_LED1_OFF()      LED1_PxOUT &= ~LED1_PIN
+#define     HAL_LED2_OFF()      LED2_PxOUT &= ~LED2_PIN
+#define     HAL_LED3_OFF()      LED3_PxOUT &= ~LED3_PIN
+#define     HAL_LED4_OFF()      LED4_PxOUT &= ~LED4_PIN
+
+#define     HAL_LED1_TOGGLE()  LED1_PxOUT ^= LED1_PIN
+#define     HAL_LED2_TOGGLE()  LED2_PxOUT ^= LED2_PIN
+#define     HAL_LED3_TOGGLE()  LED3_PxOUT ^= LED3_PIN
+#define     HAL_LED4_TOGGLE()  LED4_PxOUT ^= LED4_PIN
+
+#define     RADIO_BURST_ACCESS      0x40
+#define     RADIO_SINGLE_ACCESS     0x00
+#define     RADIO_READ_ACCESS       0x80
+#define     RADIO_WRITE_ACCESS      0x00
+
+/* Bit fields in the chip status byte */
+#define STATUS_CHIP_RDYn_BM              0x80
+#define STATUS_STATE_BM                  0x70
+#define STATUS_FIFO_BYTES_AVAILABLE_BM   0x0F
+
+/******************************************************************************
+ *  Macros for Tranceivers(TRX)
+ */
+
+#define RF_SPI_BEGIN()              st( RF_CS_N_PORT_OUT &= ~RF_CS_N_PIN; NOP(); )
+#define RF_SPI_TX(x)                st( UCB1IFG &= ~UCRXIFG; UCB1TXBUF= (x); )
+#define RF_SPI_WAIT_DONE()          st( while(!(UCB1IFG & UCRXIFG)); )
+#define RF_SPI_WAIT_TX_DONE()       st( while(!(UCB1IFG & UCTXIFG)); )
+#define RF_SPI_RX()                 UCB1RXBUF
+#define RF_SPI_WAIT_MISO_LOW(x)     st( uint8 count = 200; \
+                                           while(RF_PORT_IN & RF_SPI_MISO_PIN) \
+                                           { \
+                                              __delay_cycles(5000); \
+                                              count--; \
+                                              if (count == 0) break; \
+                                           } \
+                                           if(count>0) (x) = 1; \
+                                           else (x) = 0; )
+
+#define RF_SPI_END()                st( NOP(); RF_CS_N_PORT_OUT |= RF_CS_N_PIN; )
+
+#endif
 /******************************************************************************
  * TYPEDEFS
  */

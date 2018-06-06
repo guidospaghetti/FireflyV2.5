@@ -831,11 +831,16 @@ int radio_wait_for_idle(unsigned short max_hold) {
 		rf_end_packet = 0;  // initialize global variable for use in this function
 
 		/* setup the interrupt */
-		RF_GDO_PxIES |= RF_GDO_PIN;       // Int on falling edge (end of pkt)
-		//TB0CCTL0 |= CM1;
-		RF_GDO_PxIFG &= ~RF_GDO_PIN;      // Clear flag
-		//TB0CCTL0 &= ~CCIFG;
+#ifndef FIREFLY_24
+		RF_GDO_PxIES |= RF_GDO_PIN;			// Int on falling edge (end of pkt)
+		RF_GDO_PxIFG &= ~RF_GDO_PIN;		// Clear flag
 		RF_GDO_PxIE |= RF_GDO_PIN;        // Enable int on end of packet
+#else
+		TB0CCTL0 |= CM1;
+		TB0CCTL0 &= ~CCIFG;					// Clear flag
+		TB0CCTL0 |= CCIE;
+#endif
+
 
 		/* enabled timeout if requested */
 		if(max_hold > 0) {
@@ -847,7 +852,11 @@ int radio_wait_for_idle(unsigned short max_hold) {
 		}
 
 		/********  Setup the GDO ports to not interupts ****************************/
+#ifndef FIREFLY_24
 		RF_GDO_PxIE &= ~RF_GDO_PIN;              // Disable int on end of packet
+#else
+		TB0CCTL0 &= ~CCIE;
+#endif
 
 	}
 	/* Get timer values, however if we did not get a packet in time use 0      */
@@ -885,8 +894,11 @@ int radio_is_busy(void) {
 	while (RF_GDO_IN & RF_GDO_PIN);
 
 	// Wait GDO0 to clear -> end of pkt
+#ifndef FIREFLY_24
 	RF_GDO_PxIFG &= ~RF_GDO_PIN;          // After pkt TX, this flag is set.
-	//TB0CCTL0 &= ~CCIFG;
+#else
+	TB0CCTL0 &= ~CCIFG;
+#endif
 
 	return(0);
 }
@@ -907,9 +919,14 @@ int radio_is_busy(void) {
  */
 int radio_pending_packet(void) {
 
-	RF_GDO_PxIES |= RF_GDO_PIN;       // Int on falling edge (end of pkt)
-	//TB0CCTL0 |= CM1;
-	RF_GDO_PxIE |= RF_GDO_PIN;        // Enable int on end of packet
+#ifndef FIREFLY_24
+	RF_GDO_PxIES |= RF_GDO_PIN;		// Int on falling edge (end of pkt)
+	RF_GDO_PxIE |= RF_GDO_PIN;		// Enable int on end of packet
+#else
+	TB0CCTL0 |= CM1;				// Int on falling edge (end of pkt)
+	TB0CCTL0 |= CCIE;
+#endif
+
 
 	return rf_end_packet;
 }
@@ -929,10 +946,14 @@ int radio_pending_packet(void) {
  *
  */
 int radio_clear_pending_packet(void) {
+#ifndef FIREFLY_24
+	RF_GDO_PxIES &= ~RF_GDO_PIN;	// Int on falling edge (end of pkt)
+	RF_GDO_PxIE &= ~RF_GDO_PIN;		// Enable int on end of packet
+#else
+	TB0CCTL0 |= CM0;				// Int on falling edge (end of pkt)
+	TB0CCTL0 |= CCIE;
+#endif
 
-	RF_GDO_PxIES &= ~RF_GDO_PIN;       // Int on falling edge (end of pkt)
-	//TB0CCTL0 |= CM0;
-	RF_GDO_PxIE &= ~RF_GDO_PIN;        // Enable int on end of packet
 
 	rf_end_packet = 0;
 
@@ -1185,8 +1206,11 @@ __interrupt void radio_isr(void) {
 		__bic_SR_register_on_exit(LPM3_bits);
 
 		// clear the interrupt flag
+#ifndef FIREFLY_24
 		RF_GDO_PxIFG &= ~RF_GDO_PIN;
-		//TB0CCTL0 &= ~CCIFG;
+#else
+		TB0CCTL0 &= ~CCIFG;
+#endif
 
 		// indicate that end of packet has been found
 		rf_end_packet = 1;
