@@ -46,9 +46,7 @@ void wait_for_launch() {
 	initDataStorage();
 	collection_t data;
 	while (1) {
-		RED_OFF();
 		collect(&data, 0);
-		RED_ON();
 		flightState_t flightState = update(&data);
 		if (flightState == UPWARDS) {
 			RED_OFF();
@@ -76,12 +74,9 @@ void upwards(void) {
 	setup_collection(&config);
 	collection_t data;
 	while (1) {
-		RED_OFF();
 		collect(&data, 0);
-		RED_ON();
 		flightState_t flightState = update(&data);
 		if (flightState == DOWNWARDS) {
-			RED_OFF();
 			stop_collection();
 			break;
 		}
@@ -106,12 +101,9 @@ void downwards(void) {
 	setup_collection(&config);
 	collection_t data;
 	while (1) {
-		RED_OFF();
 		collect(&data, 0);
-		RED_ON();
 		flightState_t flightState = update(&data);
 		if (flightState == LANDED) {
-			RED_OFF();
 			stop_collection();
 			break;
 		}
@@ -136,9 +128,7 @@ void landed(void) {
 	setup_collection(&config);
 	collection_t data;
 	while (1) {
-		RED_OFF();
 		collect(&data, 0);
-		RED_ON();
 		flightState_t flightState = update(&data);
 	}
 }

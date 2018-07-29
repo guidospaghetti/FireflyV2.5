@@ -8,6 +8,7 @@
 #include "MplUtil.h"
 #include "uart.h"
 #include "settings.h"
+#include "LED.h"
 
 
 #define ACLK	32768
@@ -91,7 +92,9 @@ void collect(collection_t* data, uint8_t verbose) {
 
 	if (config.storeRate > 0) {
 		if (timer_ticks % config.storeRate == 0) {
+			RED_ON();
 			save(data);
+			RED_OFF();
 		}
 	}
 

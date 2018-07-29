@@ -31,7 +31,7 @@ void CC1120Init(void) {
 
 	rf_default_setup(&trx_cfg);
 	trx_cfg.b_length = TX_BUFF_SIZE;
-	trx_cfg.start_freq = 433500;
+	trx_cfg.start_freq = 433495;
 }
 
 void run_receiving(void) {

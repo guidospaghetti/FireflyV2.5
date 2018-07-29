@@ -98,11 +98,12 @@ void msp_setup(void) {
 
 payloadMode_t get_mode(void) {
 	sendHelloMessage();
-
+	uint8_t counter = 0;
 	wakeup_on_wdt = 1;
 	wakeupOn1 = 1;
 	while (1) {
 		ENTER_LPM0();
+		counter++;
 		if (hal_UART_DataAvailable(1)) {
 			if (lastByte1 == '0') {
 				wakeup_on_wdt = 0;
@@ -116,6 +117,12 @@ payloadMode_t get_mode(void) {
 				sendString(1, "1\r\n");
 				return RETRIEVAL;
 			}
+		}
+		else if (counter > 30) {
+			wakeup_on_wdt = 0;
+			wakeupOn1 = 0;
+			sendString(1, "\r\nEntering Flight Mode\r\n");
+			return FLIGHT;
 		}
 		else {
 			sendHelloMessage();

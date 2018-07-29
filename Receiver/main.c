@@ -25,23 +25,13 @@ int main(void) {
 
     run_receiving();
 
-//	TA1CCR0 = 32768;
-//	TA1CTL = TASSEL__ACLK + MC__UP + TACLR + ID__1 + TAIE;
-//	TA1CCTL1 = CCIE;
-//
-//	while(1) {
-//		ENTER_LPM0();
-//		UCA1TXBUF = 'A';
-//
-//	}
-
 	return 0;
 }
 
 void msp_setup(void) {
 
 	INIT_LEDS();
-	GREEN_ON();
+	GREEN_OFF();
 	RED_ON();
 
 	setClock16MHz();
@@ -96,21 +86,6 @@ void setClock16MHz(void) {
 	} while (SFRIFG1&OFIFG);                   // Test oscillator fault flag
 
 	return;
-}
-
-#pragma vector=TIMER1_A1_VECTOR
-__interrupt void TimerA1_ISR(void) {
-	switch(__even_in_range(TA1IV, 4)) {
-	case TA1IV_NONE:
-		break;
-	case TA1IV_TACCR1:
-		_BIC_SR_IRQ(LPM3_bits);
-		break;
-	case TA1IV_TACCR2:
-		break;
-	default:
-		break;
-	}
 }
 
 #pragma vector=WDT_VECTOR

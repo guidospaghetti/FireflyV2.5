@@ -45,7 +45,7 @@
 #include "radio_drv.h"
 #include "hal_spi_rf.h"
 #include "hal_timer.h"
-
+#include "LED.h"
 #ifdef USE_CC112X
 
 /******************************************************************************
@@ -1061,7 +1061,7 @@ int radio_idle(void) {
 #endif
 
 	/* Idle range extender */
-	range_extender_idle();
+//	range_extender_idle();
 
 	/* Force transciever idle state */
 	trxSpiCmdStrobe(SIDLE);
@@ -1211,7 +1211,7 @@ __interrupt void radio_isr(void) {
 #else
 		TB0CCTL0 &= ~CCIFG;
 #endif
-
+		RED_OFF();
 		// indicate that end of packet has been found
 		rf_end_packet = 1;
 	}
